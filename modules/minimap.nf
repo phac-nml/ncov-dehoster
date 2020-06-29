@@ -38,6 +38,27 @@ process minimap2 {
     """
 }
 
+process samtoolsFlagstat {
+
+    publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.flagstats.txt", mode: "copy"
+
+    label 'smallcpu'
+
+    tag { sampleName }
+
+    input:
+    tuple sampleName, file(sorted_bam)
+
+    output:
+    
+    file("${sampleName}.flagstats.txt") 
+
+    script:
+    """
+    samtools flagstat ${sorted_bam} > ${sampleName}.flagstats.txt
+    """
+}
+
 process removeMappedReads {
 
     label 'smallcpu'
