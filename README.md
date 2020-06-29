@@ -7,7 +7,7 @@ Nextflow and slurm pipeline that removes human reads from SARS-CoV-2 nanopore se
 Run the pipeline with the simple command:
 
 ```
-nextflow run phac-nml/ncov-dehumanizer -profile conda --directory <path/to/reads/dir>
+nextflow run phac-nml/ncov-dehoster -profile conda --directory <path/to/reads/dir>
 ```
 
 ## Notes:
