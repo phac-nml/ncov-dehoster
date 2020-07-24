@@ -3,7 +3,7 @@ process copyReference {
     label 'smallcpu'
 
     input:
-    file(reference)
+    file(human_ref)
 
     output:
     file('reference.fasta')
@@ -11,7 +11,7 @@ process copyReference {
 
     script:
     """
-    mv ${reference} ./reference.fasta
+    mv ${human_ref} ./reference.fasta
     """
 }
 
@@ -24,7 +24,7 @@ process minimap2 {
     tag { sampleName }
 
     input:
-    tuple path(fastq), file(reference)
+    tuple path(fastq), file(human_ref), file(cov2019_ref)
 
     output:
     tuple sampleName, file("${sampleName}.sorted.bam")
@@ -34,7 +34,7 @@ process minimap2 {
     sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
 
     """
-    minimap2 -x map-ont -t 160 ${reference} ${fastq} -a | samtools sort --threads 10 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    minimap2 -x map-ont -t 160 ${human_ref} ${cov2019_ref} ${fastq} -a | samtools sort --threads 10 -T "temp" -O BAM -o ${sampleName}.sorted.bam
     """
 }
 

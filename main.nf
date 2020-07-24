@@ -22,13 +22,17 @@ workflow {
     Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
                         .set{ ch_fastq }
 
-    Channel.fromPath( "${params.reference}")
-                        .set{ ch_ref }
+    Channel.fromPath( "${params.human_ref}")
+                        .set{ ch_href }
 
-    copyReference(ch_ref)
+    Channel.fromPath( "${params.cov2019_ref}")
+                        .set{ ch_cref }
+
+    copyReference(ch_href)
 
     minimap2(ch_fastq
-                .combine(copyReference.out))
+                .combine(copyReference.out)
+                .combine(ch_cref))
 
     samtoolsFlagstat(minimap2.out)
 
