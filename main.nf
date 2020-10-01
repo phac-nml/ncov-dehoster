@@ -9,6 +9,7 @@ include minimap2 from './modules/minimap.nf'
 include samtoolsFlagstat from './modules/minimap.nf'
 include removeMappedReads from './modules/minimap.nf'
 include extractFastq from './modules/minimap.nf'
+include zeroReads from './modules/zero.nf'
 
 
 if ( !params.directory ) {
@@ -29,6 +30,8 @@ workflow {
                         .set{ ch_cref }
 
     copyReference(ch_href)
+
+    zeroReads(ch_fastq.filter{ it.size()==0 })
 
     minimap2(ch_fastq
                 .combine(copyReference.out)
