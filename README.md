@@ -1,7 +1,7 @@
 # ncov-dehoster
 
 ## About:
-Nextflow and slurm pipeline that removes human reads from SARS-CoV-2 nanopore sequencing data
+Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore (not ready) sequencing data.
 
 ## Run:
 Run the pipeline with the simple command:

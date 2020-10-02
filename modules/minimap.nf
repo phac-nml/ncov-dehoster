@@ -1,20 +1,3 @@
-process copyReference {
-
-    label 'smallcpu'
-
-    input:
-    file(human_ref)
-
-    output:
-    file('reference.fasta')
-    
-
-    script:
-    """
-    mv ${human_ref} ./reference.fasta
-    """
-}
-
 process minimap2 {
 
     publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.sorted.bam", mode: "copy"
@@ -50,7 +33,7 @@ process samtoolsFlagstat {
     tuple sampleName, file(sorted_bam)
 
     output:
-    
+
     file("${sampleName}.flagstats.txt") 
 
     script:
@@ -75,25 +58,5 @@ process removeMappedReads {
     script:
     """
     samtools view -f4 -b --threads 4 -o ${sampleName}.unmapped.sorted.bam ${sorted_bam}
-    """
-}
-
-process extractFastq {
-
-    publishDir "${params.outdir}/output_fastq", pattern: "${sampleName}.cleaned.fastq", mode: "copy"
-
-    label 'smallcpu'
-
-    tag { sampleName }
-
-    input:
-    tuple sampleName, file(unmapped_bam)
-
-    output:
-    file("${sampleName}.cleaned.fastq")
-
-    script:
-    """
-    samtools fastq --threads 4 ${unmapped_bam} > ${sampleName}.cleaned.fastq
     """
 }
