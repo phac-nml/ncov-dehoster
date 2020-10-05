@@ -14,6 +14,4 @@ nextflow run phac-nml/ncov-dehoster -profile conda --directory <path/to/reads/di
 
 - If you have the dependencies installed already you can skip the `-profile conda` step
 
-- Set up to only really work on the NML cluster for the moment
-
 - This is an initial version and there are potentially still bugs and changes to be made

@@ -17,20 +17,20 @@ process copyReference {
 
 process extractFastq {
 
-    publishDir "${params.outdir}/output_fastq", pattern: "${sampleName}.cleaned.fastq", mode: "copy"
+    publishDir "${params.outdir}/output_fastq", pattern: "${sampleName}.mapped.fastq", mode: "copy"
 
     label 'smallcpu'
 
     tag { sampleName }
 
     input:
-    tuple sampleName, file(unmapped_bam)
+    tuple sampleName, path(mapped_bam)
 
     output:
-    file("${sampleName}.cleaned.fastq")
+    file("${sampleName}.mapped.fastq")
 
     script:
     """
-    samtools fastq --threads 4 ${unmapped_bam} > ${sampleName}.cleaned.fastq
+    samtools fastq --threads 4 ${mapped_bam} > ${sampleName}.mapped.fastq
     """
 }

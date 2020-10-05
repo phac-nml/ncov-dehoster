@@ -5,3 +5,4 @@ channels:
 dependencies:
   - minimap2
   - samtools
+  - bwa
