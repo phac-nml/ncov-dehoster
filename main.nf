@@ -4,9 +4,7 @@
 nextflow.preview.dsl = 2
 
 // Modules
-include {copyReference} from './modules/base_functions.nf'
-include {PLACEHOLDER} from './modules/illumina.nf'
-
+// None at the moment, add some here if need to pre-process reads (like find no inputs etc)
 
 // subworkflows
 include {illuminaDehosting} from './workflows/illumina_dehosting.nf'
@@ -50,6 +48,9 @@ workflow {
         if ( params.single_end ){
             Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
                         .set{ ch_fastqs }
+            
+            println('Single end reads pipeline is not yet available')
+            System.exit(1)
 
         } else {
             Channel.fromFilePairs( params.fastqpaths, flat: true)

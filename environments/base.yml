@@ -3,6 +3,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - minimap2
   - samtools
   - bwa
+  - pysam
+  - minimap2

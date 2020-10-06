@@ -4,7 +4,7 @@
 nextflow.preview.dsl = 2
 
 // Import modules
-include {PLACEHOLDER} from '../modules/nanopore.nf' 
+include {minimap2} from '../modules/nanopore.nf' 
 
 
 // Workflow
@@ -13,6 +13,6 @@ workflow nanoporeDehosting {
       ch_fast5pass
     
     main:
-      PLACEHOLDER()
+      minimap2()
 
 }

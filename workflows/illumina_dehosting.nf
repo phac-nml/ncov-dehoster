@@ -4,11 +4,12 @@
 nextflow.preview.dsl = 2
 
 // Import modules
+include {indexHumanReference} from '../modules/illumina.nf'
+include {indexViralReference} from '../modules/illumina.nf'
 include {captureViralReads} from '../modules/illumina.nf'
 include {captureHumanReads} from '../modules/illumina.nf'
-
-include {copyReference} from '../modules/base_functions.nf'
-include {extractFastq} from '../modules/base_functions.nf'
+include {dehostSamFiles} from '../modules/illumina.nf'
+include {generateDehostedReads} from '../modules/illumina.nf'
 
 // Workflow
 workflow illuminaDehosting {
@@ -19,13 +20,23 @@ workflow illuminaDehosting {
 
     main:
 
-    copyReference(ch_HumanReference)
+    Channel.fromPath("${params.human_bwa_index}")
+              .set{ ch_index }
+
+    indexHumanReference(ch_HumanReference, ch_index)
+    indexViralReference(ch_CovidReference)
 
     captureViralReads(ch_fastqs
-                        .combine(ch_CovidReference))
+                        .combine(ch_CovidReference),
+                      indexViralReference.out.collect())
 
     captureHumanReads(ch_fastqs
-                        .combine(copyReference.out))
+                        .combine(ch_HumanReference),
+                      indexHumanReference.out.collect())
 
+    dehostSamFiles(captureViralReads.out.sam,
+                    captureHumanReads.out.sam)
+
+    generateDehostedReads(dehostSamFiles.out)
 
 }
