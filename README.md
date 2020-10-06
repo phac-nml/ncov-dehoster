@@ -4,11 +4,14 @@
 Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore (not ready) sequencing data.
 
 ## Run:
-Run the pipeline with the simple command:
+Run the Illumina pipeline with the simple command:
 
 ```
-nextflow run phac-nml/ncov-dehoster -profile conda --directory <path/to/reads/dir>
+nextflow run phac-nml/ncov-dehoster -profile conda --directory <path/to/paired_reads/dir> --illumina
 ```
+
+If you want to modify the executor (say use slurm for example) or the resource allocations generate and
+add a custom profile that you can specify with `-profile`
 
 ## Notes:
 
