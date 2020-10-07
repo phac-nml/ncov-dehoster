@@ -90,11 +90,11 @@ process dehostSamFiles {
     label 'smallcpu'
 
     input:
-    tuple(sampleName, path(virus_sam))
-    tuple(sampleName, path(human_sam))
+    tuple(sampleName, path(virus_sam), path(human_sam))
 
     output:
-    tuple sampleName, path("${sampleName}.dehosted.sam")
+    tuple sampleName, path("${sampleName}.dehosted.sam"), emit: sam
+    path "${sampleName}*.csv", emit: csv
 
     script:
     """
@@ -104,16 +104,31 @@ process dehostSamFiles {
 
 process generateDehostedReads {
 
-    publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}_R*", mode: "copy"
+    publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}-dehosted_R*", mode: "copy"
 
     input:
     tuple(sampleName, path(dehosted_sam))
 
     output:
-    path("${sampleName}_R*")
+    path("${sampleName}-dehosted_R*")
 
     script:
     """
-    samtools fastq -1 ${sampleName}_R1.dehosted.fastq -2 ${sampleName}_R2.dehosted.fastq ${dehosted_sam}
+    samtools fastq -1 ${sampleName}-dehosted_R1.fastq -2 ${sampleName}-dehosted_R2.fastq ${dehosted_sam}
+    """
+}
+
+process combineCSVs {
+    publishDir "${params.outdir}", pattern: "removal_summary.csv", mode: "copy"
+
+    input:
+    path(csvs)
+
+    output:
+    path("removal_summary.csv")
+
+    script:
+    """
+    csvtk concat *.virus_stats.csv > removal_summary.csv
     """
 }

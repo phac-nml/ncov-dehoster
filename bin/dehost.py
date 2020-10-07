@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import pysam
+import os
+import subprocess
+
+from collections import defaultdict
+from pathlib import Path
 
 def init_parser():
     '''
@@ -15,7 +21,7 @@ def init_parser():
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=0, help='Minimum quality of the reads to be included in removal')
     parser.add_argument('-m', '--minimum_read_length', required=False, type=int, default=251, help='Minimum length of reads to keep')
     parser.add_argument('-M', '--maximum_read_length', required=False, type=int, default=0, help='Maximum length of reads to keep')
-    parser.add_argument('-o', '--output', required=False, default='out.sam', help='Output sam name')
+    parser.add_argument('-o', '--output', required=False, default='out.sam', help='Output SAM name')
 
     return parser
 
@@ -33,21 +39,56 @@ def get_reads_to_remove(samfile_path, input_mapping_quality, reads_to_remove=set
     return reads_to_remove, count
 
 
-def generate_dehosted_sam(samfile_in, samfile_out, input_mapping_quality, removal_read_ids, reads_found=[]):
+def read_pair_generator(bam, region_string=None):
+    """
+    Generate read pairs for a BAM or SAM file or within a region string of said file.
+    Reads are added to read_dict until a pair is found.
+    """
+    read_dict = defaultdict(lambda: [None, None])
+    for read in bam.fetch(region=region_string):
+        if not read.is_proper_pair or read.is_secondary or read.is_supplementary:
+            continue
+
+        qname = read.query_name
+        if qname not in read_dict:
+            if read.is_read1:
+                read_dict[qname][0] = read
+            else:
+                read_dict[qname][1] = read
+        else:
+            if read.is_read1:
+                yield read, read_dict[qname][1]
+            else:
+                yield read_dict[qname][0], read
+
+            del read_dict[qname]
+
+
+def remove_host_reads(samfile_in, input_mapping_quality, remove_reads_set, reads_found=[], human_count=0, poor_quality_count=0):
 
     samfile = pysam.AlignmentFile(samfile_in, "r")
     header = samfile.header
 
-    for read in samfile.fetch():
-        if read.query_name in removal_read_ids:
-            pass
+    for read_1, read_2 in read_pair_generator(samfile):
 
-        elif read.mapping_quality >= input_mapping_quality:
-            reads_found.append(read)
+        if read_1.query_name in remove_reads_set:
+            human_count += 2
+            continue
+
+        elif read_1.mapping_quality >= input_mapping_quality and read_2.mapping_quality >= input_mapping_quality:
+            reads_found.append(read_1)
+            reads_found.append(read_2)
+
+        else:
+            poor_quality_count += 2
 
     samfile.close()
 
-    with pysam.AlignmentFile(samfile_out, "w", header=header) as outfile:
+    return reads_found, human_count, poor_quality_count, header
+
+
+def generate_dehosted_output(reads_found, keep_header, samfile_out):
+    with pysam.AlignmentFile(samfile_out, "w", header=keep_header) as outfile:
         for read in reads_found:
             outfile.write(read)
 
@@ -56,9 +97,25 @@ def main():
     parser = init_parser()
     args = parser.parse_args()
 
-    remove_reads_set, num_removed = get_reads_to_remove(args.remove_sam, args.remove_minimum_quality)
+    sample_name = os.path.splitext(Path(args.keep_sam).stem)[0]
 
-    generate_dehosted_sam(args.keep_sam, args.output, args.keep_minimum_quality, remove_reads_set)
+    remove_reads_set, human_read_count = get_reads_to_remove(args.remove_sam, args.remove_minimum_quality)
+
+    read_list, human_filtered_count, poor_quality_count, header = remove_host_reads(args.keep_sam, args.keep_minimum_quality, remove_reads_set)
+
+    generate_dehosted_output(read_list, header, args.output)
+
+    line = {    'sample' : sample_name,
+                'human_reads_identified' : human_read_count,
+                'human_reads_filtered' : human_filtered_count, 
+                'poor_quality_reads' : poor_quality_count,
+                'reads_kept' : len(read_list)}
+
+    with open('{}_stats.csv'.format(sample_name), 'w') as csvfile:
+        header = line.keys()
+        writer = csv.DictWriter(csvfile, fieldnames=header)
+        writer.writeheader()
+        writer.writerow(line)
 
 
 if __name__ == "__main__":

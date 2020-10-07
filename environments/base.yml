@@ -7,3 +7,4 @@ dependencies:
   - bwa
   - pysam
   - minimap2
+  - csvtk
