@@ -4,11 +4,11 @@
 nextflow.preview.dsl = 2
 
 // Modules
-include copyReference from './modules/minimap.nf'
-include minimap2 from './modules/minimap.nf'
-include samtoolsFlagstat from './modules/minimap.nf'
-include removeMappedReads from './modules/minimap.nf'
-include extractFastq from './modules/minimap.nf'
+// None at the moment, add some here if need to pre-process reads (like find no inputs etc)
+
+// subworkflows
+include {illuminaDehosting} from './workflows/illumina_dehosting.nf'
+//include {nanoporeDehosting} from './workflows/nanopore_dehosting.nf'
 
 
 if ( !params.directory ) {
@@ -16,23 +16,56 @@ if ( !params.directory ) {
     System.exit(1)
 }
 
+
+// Checking everything is found
+if ( params.illumina ) {
+    if ( !params.directory ) {
+        println("Please specify a directory containing single-end or paired fastq files with --directory <path/to/fastqs>")
+        System.exit(1)
+    }
+} else if ( params.nanopore ) {
+    if ( !params.directory ) {
+        println("Please specify a directory containing fast5 files with --directory <path/to/fast5s>")
+        System.exit(1)
+    }
+} else {
+    println('Please specify either --illumina or --nanopore for the type of sequencing data that will be dehosted')
+    System.exit(1)
+}
+
 // Main
 workflow {
 
-    Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
-                        .set{ ch_fastq }
+    Channel.fromPath( "${params.human_ref}")
+                        .set{ ch_HumanReference }
 
-    Channel.fromPath( "${params.reference}")
-                        .set{ ch_ref }
+    Channel.fromPath( "${params.cov2019_ref}")
+                        .set{ ch_CovidReference }
 
-    copyReference(ch_ref)
+    if ( params.illumina ) {
+        
+        // Single-end or paired-end run
+        if ( params.single_end ){
+            Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
+                        .set{ ch_fastqs }
+            
+            println('Single end reads pipeline is not yet available')
+            System.exit(1)
 
-    minimap2(ch_fastq
-                .combine(copyReference.out))
+        } else {
+            Channel.fromFilePairs( params.fastqpaths, flat: true)
+                        .set{ ch_fastqs }
+            
+            illuminaDehosting(ch_fastqs, ch_HumanReference, ch_CovidReference)
+        }
+    
+    } else if ( params.nanopore ) {
+        println('Nanopore pipeline not ready yet. This feature will be available soon (hopefully)')
+        System.exit(1)
 
-    samtoolsFlagstat(minimap2.out)
+    } else {
+        println('Please specify either --illumina or --nanopore for the type of data that will be dehosted')
+        System.exit(1)
+    }
 
-    removeMappedReads(minimap2.out)
-
-    extractFastq(removeMappedReads.out)
 }

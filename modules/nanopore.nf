@@ -1,20 +1,3 @@
-process copyReference {
-
-    label 'smallcpu'
-
-    input:
-    file(reference)
-
-    output:
-    file('reference.fasta')
-    
-
-    script:
-    """
-    mv ${reference} ./reference.fasta
-    """
-}
-
 process minimap2 {
 
     publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.sorted.bam", mode: "copy"
@@ -24,7 +7,7 @@ process minimap2 {
     tag { sampleName }
 
     input:
-    tuple path(fastq), file(reference)
+    tuple path(fastq), file(human_ref), file(cov2019_ref)
 
     output:
     tuple sampleName, file("${sampleName}.sorted.bam")
@@ -34,7 +17,7 @@ process minimap2 {
     sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
 
     """
-    minimap2 -x map-ont -t 160 ${reference} ${fastq} -a | samtools sort --threads 10 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    minimap2 -x map-ont -t 160 ${human_ref} ${cov2019_ref} ${fastq} -a | samtools sort --threads 10 -T "temp" -O BAM -o ${sampleName}.sorted.bam
     """
 }
 
@@ -50,7 +33,7 @@ process samtoolsFlagstat {
     tuple sampleName, file(sorted_bam)
 
     output:
-    
+
     file("${sampleName}.flagstats.txt") 
 
     script:
@@ -75,25 +58,5 @@ process removeMappedReads {
     script:
     """
     samtools view -f4 -b --threads 4 -o ${sampleName}.unmapped.sorted.bam ${sorted_bam}
-    """
-}
-
-process extractFastq {
-
-    publishDir "${params.outdir}/output_fastq", pattern: "${sampleName}.cleaned.fastq", mode: "copy"
-
-    label 'smallcpu'
-
-    tag { sampleName }
-
-    input:
-    tuple sampleName, file(unmapped_bam)
-
-    output:
-    file("${sampleName}.cleaned.fastq")
-
-    script:
-    """
-    samtools fastq --threads 4 ${unmapped_bam} > ${sampleName}.cleaned.fastq
     """
 }

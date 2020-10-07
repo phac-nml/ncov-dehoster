@@ -1,19 +1,33 @@
 # ncov-dehoster
 
 ## About:
-Nextflow and slurm pipeline that removes human reads from SARS-CoV-2 nanopore sequencing data
+Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore (not ready) sequencing data.
 
 ## Run:
-Run the pipeline with the simple command:
+Run the Illumina pipeline with the simple command:
 
 ```
-nextflow run phac-nml/ncov-dehoster -profile conda --directory <path/to/reads/dir>
+nextflow run phac-nml/ncov-dehoster -profile conda --directory <path/to/paired_reads/dir> --illumina --human_ref <path/to/reference>
 ```
+
+If you want to modify the executor (say use slurm for example) or the resource allocations generate and
+add a custom profile that you can specify with `-profile`
 
 ## Notes:
 
 - If you have the dependencies installed already you can skip the `-profile conda` step
 
-- Set up to only really work on the NML cluster for the moment
+- You will need a human reference genome and to specify it with `--human_ref <path/to/reference>`. The nml path is in by default (sorry)
+
+- Slowest part of the pipeline is indexing the human reference with bwa index, if you have a bwa index of the
+human reference genome, pass it in with the parameter `--human_bwa_index <path/to/bwa_indexes>`
 
 - This is an initial version and there are potentially still bugs and changes to be made
+
+## Upcoming (Hopefully) Additions and Changes:
+
+- Nanopore removal and re-basecalling of fast5 raw data
+
+- Illumina working on gzipped files
+
+- More info in `summary_removal.csv` output
