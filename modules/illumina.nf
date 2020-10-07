@@ -25,7 +25,7 @@ process indexHumanReference {
 
 process indexViralReference {
 
-    label 'largecpu'
+    label 'mediumcpu'
 
     input:
     path(viral_ref)
@@ -41,7 +41,7 @@ process indexViralReference {
 
 process captureViralReads {
 
-    publishDir "${params.outdir}/virusSAM", pattern: "${sampleName}.*", mode: "copy"
+    publishDir "${params.outdir}/virusMAPs", pattern: "${sampleName}.*", mode: "copy"
 
     label 'largecpu'
 
@@ -50,20 +50,20 @@ process captureViralReads {
     path(indexed_reference)
 
     output:
-    tuple sampleName, path("${sampleName}.virus.sorted.sam"), emit: sam
+    tuple sampleName, path("${sampleName}.virus.sorted.bam"), emit: bam
     path("${sampleName}.flagstats.txt")
 
     script:
     """
-    bwa mem -t 10 ${covid_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O SAM -o ${sampleName}.sorted.sam
-    samtools view --threads 4 -h -f 0x0002 ${sampleName}.sorted.sam > ${sampleName}.virus.sorted.sam
-    samtools flagstat ${sampleName}.virus.sorted.sam > ${sampleName}.flagstats.txt
+    bwa mem -t 10 ${covid_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    samtools view --threads 4 -h -f 0x0002 ${sampleName}.sorted.bam > ${sampleName}.virus.sorted.bam
+    samtools flagstat ${sampleName}.virus.sorted.bam > ${sampleName}.flagstats.txt
     """
 }
 
 process captureHumanReads {
 
-    publishDir "${params.outdir}/humanSAM", pattern: "${sampleName}.*", mode: "copy"
+    publishDir "${params.outdir}/humanMAPs", pattern: "${sampleName}.*", mode: "copy"
 
     label 'largecpu'
 
@@ -72,33 +72,33 @@ process captureHumanReads {
     path(indexed_reference)
 
     output:
-    tuple sampleName, path("${sampleName}.human.sorted.sam"), emit: sam
+    tuple sampleName, path("${sampleName}.human.sorted.bam"), emit: bam
     path("${sampleName}.flagstats.txt")
 
     script:
     """
-    bwa mem -t 10 ${human_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O SAM -o ${sampleName}.sorted.sam
-    samtools view --threads 4 -h -F 4 ${sampleName}.sorted.sam > ${sampleName}.human.sorted.sam
-    samtools flagstat ${sampleName}.human.sorted.sam > ${sampleName}.flagstats.txt
+    bwa mem -t 10 ${human_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    samtools view --threads 4 -h -F 4 ${sampleName}.sorted.bam > ${sampleName}.human.sorted.bam
+    samtools flagstat ${sampleName}.human.sorted.bam > ${sampleName}.flagstats.txt
     """
 }
 
-process dehostSamFiles {
+process dehostBamFiles {
 
-    publishDir "${params.outdir}/dehosted_sams", pattern: "${sampleName}.*", mode: "copy"
+    publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"
 
-    label 'smallcpu'
+    label 'mediumcpu'
 
     input:
-    tuple(sampleName, path(virus_sam), path(human_sam))
+    tuple(sampleName, path(virus_bam), path(human_bam))
 
     output:
-    tuple sampleName, path("${sampleName}.dehosted.sam"), emit: sam
+    tuple sampleName, path("${sampleName}.dehosted.bam"), emit: bam
     path "${sampleName}*.csv", emit: csv
 
     script:
     """
-    dehost.py --keep_sam ${virus_sam} --remove_sam ${human_sam} -q ${params.keep_min_map_quality} -Q ${params.remove_min_map_quality} -o ${sampleName}.dehosted.sam
+    dehost.py --keep ${virus_bam} --remove ${human_bam} -q ${params.keep_min_map_quality} -Q ${params.remove_min_map_quality} -o ${sampleName}.dehosted.bam
     """
 }
 
@@ -106,20 +106,25 @@ process generateDehostedReads {
 
     publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}-dehosted_R*", mode: "copy"
 
+    label 'mediumcpu'
+
     input:
-    tuple(sampleName, path(dehosted_sam))
+    tuple(sampleName, path(dehosted_bam))
 
     output:
     path("${sampleName}-dehosted_R*")
 
     script:
     """
-    samtools fastq -1 ${sampleName}-dehosted_R1.fastq -2 ${sampleName}-dehosted_R2.fastq ${dehosted_sam}
+    samtools fastq -1 ${sampleName}-dehosted_R1.fastq -2 ${sampleName}-dehosted_R2.fastq ${dehosted_bam}
     """
 }
 
 process combineCSVs {
+
     publishDir "${params.outdir}", pattern: "removal_summary.csv", mode: "copy"
+
+    label 'smallcpu'
 
     input:
     path(csvs)

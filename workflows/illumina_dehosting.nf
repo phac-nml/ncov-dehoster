@@ -8,7 +8,7 @@ include {indexHumanReference} from '../modules/illumina.nf'
 include {indexViralReference} from '../modules/illumina.nf'
 include {captureViralReads} from '../modules/illumina.nf'
 include {captureHumanReads} from '../modules/illumina.nf'
-include {dehostSamFiles} from '../modules/illumina.nf'
+include {dehostBamFiles} from '../modules/illumina.nf'
 include {generateDehostedReads} from '../modules/illumina.nf'
 include {combineCSVs} from '../modules/illumina.nf'
 
@@ -35,11 +35,10 @@ workflow illuminaDehosting {
                         .combine(ch_HumanReference),
                       indexHumanReference.out.collect())
 
-    dehostSamFiles(captureViralReads.out.sam
-                    .join(captureHumanReads.out.sam, by: 0))
+    dehostBamFiles(captureViralReads.out.bam
+                    .join(captureHumanReads.out.bam, by: 0))
 
-    generateDehostedReads(dehostSamFiles.out.sam)
+    generateDehostedReads(dehostBamFiles.out.bam)
 
-    combineCSVs(dehostSamFiles.out.csv.collect())
-
+    combineCSVs(dehostBamFiles.out.csv.collect())
 }

@@ -1,5 +1,6 @@
 process zeroReads {
 
+    // Will add to this
     label 'smallcpu'
 
     publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "out.txt", mode: "copy"
