@@ -28,6 +28,4 @@ human reference genome, pass it in with the parameter `--human_bwa_index <path/t
 
 - Nanopore removal and re-basecalling of fast5 raw data
 
-- Illumina working on gzipped files
-
-- More info in `summary_removal.csv` output
+- More info in `removal_summary.csv` output
