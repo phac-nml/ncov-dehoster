@@ -105,11 +105,16 @@ def main():
 
     generate_dehosted_output(read_list, header, args.output)
 
+    if len(read_list) == 0:
+        percentage_kept = 0
+    else:
+        percentage_kept = len(read_list)/(human_filtered_count + poor_quality_count + len(read_list)) * 100
+
     line = {    'sample' : sample_name,
                 'human_reads_filtered' : human_filtered_count, 
                 'poor_quality_reads_filtered' : poor_quality_count,
                 'paired_reads_kept' : len(read_list),
-                'total_read_pairs_checked' : human_filtered_count + poor_quality_count + len(read_list)}
+                'percentage_kept' : "{:.2f}".format(percentage_kept)}
 
     with open('{}_stats.csv'.format(sample_name), 'w') as csvfile:
         header = line.keys()
