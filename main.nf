@@ -53,9 +53,9 @@ workflow {
             System.exit(1)
 
         } else {
-            Channel.fromFilePairs( params.fastqpaths, flat: true)
+            Channel.fromFilePairs( params.fastqpaths, flat: true, maxDepth: 1)
                         .set{ ch_fastqs }
-            
+
             illuminaDehosting(ch_fastqs, ch_HumanReference, ch_CovidReference)
         }
     
