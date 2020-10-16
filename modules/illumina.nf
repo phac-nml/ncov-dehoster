@@ -11,7 +11,7 @@ process generateCompositeReference {
 
     script:
     """
-    cat $human_ref > composite_reference.fa && cat $viral_ref >> composite_reference.fa
+    cat $human_ref $viral_ref > composite_reference.fa
     """
 }
 
