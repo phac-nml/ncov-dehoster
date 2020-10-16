@@ -59,33 +59,34 @@ process mapToCompositeIndex {
     path(indexed_reference)
 
     output:
-    tuple sampleName, path("${sampleName}.sorted.sam"), emit: sam
+    tuple sampleName, path("${sampleName}.sorted.bam"), emit: bam
     path("${sampleName}.flagstats.txt")
 
     script:
     """
-    bwa mem -t 8 ${composite_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O SAM -o ${sampleName}.sorted.sam
-    samtools flagstat ${sampleName}.sorted.sam > ${sampleName}.flagstats.txt
+    bwa mem -t 8 ${composite_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    samtools flagstat ${sampleName}.sorted.bam > ${sampleName}.flagstats.txt
     """
 }
 
 
-process dehostSamFiles {
+process dehostBamFiles {
 
-    publishDir "${params.outdir}/dehostedSAMs", pattern: "${sampleName}.dehosted.sam", mode: "copy"
+    publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"
 
     label 'mediumcpu'
 
     input:
-    tuple(sampleName, path(composite_sam))
+    tuple(sampleName, path(composite_bam))
 
     output:
-    tuple sampleName, path("${sampleName}.dehosted.sam"), emit: sam
+    tuple sampleName, path("${sampleName}.dehosted.bam"), emit: bam
     path "${sampleName}*.csv", emit: csv
 
     script:
     """
-    dehost.py --file ${composite_sam} --keep_id ${params.covid_ref_id} -q ${params.keep_min_map_quality} -Q ${params.remove_min_map_quality} -o ${sampleName}.dehosted.sam
+    samtools index ${composite_bam}
+    dehost.py --file ${composite_bam} --keep_id ${params.covid_ref_id} -q ${params.keep_min_map_quality} -Q ${params.remove_min_map_quality} -o ${sampleName}.dehosted.bam
     """
 }
 
@@ -96,14 +97,14 @@ process generateDehostedReads {
     label 'mediumcpu'
 
     input:
-    tuple(sampleName, path(dehosted_sam))
+    tuple(sampleName, path(dehosted_bam))
 
     output:
     path("${sampleName}-dehosted_R*")
 
     script:
     """
-    samtools fastq -1 ${sampleName}-dehosted_R1.fastq -2 ${sampleName}-dehosted_R2.fastq ${dehosted_sam}
+    samtools fastq -1 ${sampleName}-dehosted_R1.fastq -2 ${sampleName}-dehosted_R2.fastq ${dehosted_bam}
     """
 }
 

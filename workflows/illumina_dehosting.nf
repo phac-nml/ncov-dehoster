@@ -8,7 +8,7 @@ include {generateCompositeReference} from '../modules/illumina.nf'
 include {grabCompositeIndex} from '../modules/illumina.nf'
 include {indexCompositeReference} from '../modules/illumina.nf'
 include {mapToCompositeIndex} from '../modules/illumina.nf'
-include {dehostSamFiles} from '../modules/illumina.nf'
+include {dehostBamFiles} from '../modules/illumina.nf'
 include {generateDehostedReads} from '../modules/illumina.nf'
 include {combineCSVs} from '../modules/illumina.nf'
 
@@ -40,9 +40,9 @@ workflow illuminaDehosting {
                         .combine(generateCompositeReference.out),
                       ch_index)
 
-    dehostSamFiles(mapToCompositeIndex.out.sam)
+    dehostBamFiles(mapToCompositeIndex.out.bam)
 
-    generateDehostedReads(dehostSamFiles.out.sam)
+    generateDehostedReads(dehostBamFiles.out.bam)
 
-    combineCSVs(dehostSamFiles.out.csv.collect())
+    combineCSVs(dehostBamFiles.out.csv.collect())
 }
