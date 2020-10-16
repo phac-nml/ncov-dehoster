@@ -3,6 +3,8 @@
 ## About:
 Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore (not ready) sequencing data.
 
+Illumina - Takes a competitive mapping approach with bwa mem to remove human reads from the input fastq files
+
 ## Run:
 Run the Illumina pipeline with the simple command:
 
@@ -19,8 +21,8 @@ add a custom profile that you can specify with `-profile`
 
 - You will need a human reference genome and to specify it with `--human_ref <path/to/reference>`. The nml path is in by default (sorry)
 
-- Slowest part of the pipeline is indexing the human reference with bwa index, if you have a bwa index of the
-human reference genome, pass it in with the parameter `--human_bwa_index <path/to/bwa_indexes>`
+- Slowest part of the pipeline is indexing the composite human/Sars CoV2 reference with bwa index, if you have a bwa index of this
+pass the folder containing the indexes to the script with the parameter `--composite_bwa_index <path/to/bwa_indexes/>`
 
 - This is an initial version and there are potentially still bugs and changes to be made
 

@@ -4,10 +4,10 @@
 nextflow.preview.dsl = 2
 
 // Import modules
-include {indexHumanReference} from '../modules/illumina.nf'
-include {indexViralReference} from '../modules/illumina.nf'
-include {captureViralReads} from '../modules/illumina.nf'
-include {captureHumanReads} from '../modules/illumina.nf'
+include {generateCompositeReference} from '../modules/illumina.nf'
+include {grabCompositeIndex} from '../modules/illumina.nf'
+include {indexCompositeReference} from '../modules/illumina.nf'
+include {mapToCompositeIndex} from '../modules/illumina.nf'
 include {dehostBamFiles} from '../modules/illumina.nf'
 include {generateDehostedReads} from '../modules/illumina.nf'
 include {combineCSVs} from '../modules/illumina.nf'
@@ -21,22 +21,26 @@ workflow illuminaDehosting {
 
     main:
 
-    Channel.fromPath("${params.human_bwa_index}")
+    generateCompositeReference(ch_HumanReference, 
+                                ch_CovidReference)
+
+    if ( params.composite_bwa_index ){
+      grabCompositeIndex("${params.composite_bwa_index}")
+
+      grabCompositeIndex.out
               .set{ ch_index }
+    } else {
+      indexCompositeReference(generateCompositeReference.out)
 
-    indexHumanReference(ch_HumanReference, ch_index)
-    indexViralReference(ch_CovidReference)
+      indexCompositeReference.out
+              .set{ ch_index }
+    }
 
-    captureViralReads(ch_fastqs
-                        .combine(ch_CovidReference),
-                      indexViralReference.out.collect())
+    mapToCompositeIndex(ch_fastqs
+                        .combine(generateCompositeReference.out),
+                      ch_index)
 
-    captureHumanReads(ch_fastqs
-                        .combine(ch_HumanReference),
-                      indexHumanReference.out.collect())
-
-    dehostBamFiles(captureViralReads.out.bam
-                    .join(captureHumanReads.out.bam, by: 0))
+    dehostBamFiles(mapToCompositeIndex.out.bam)
 
     generateDehostedReads(dehostBamFiles.out.bam)
 

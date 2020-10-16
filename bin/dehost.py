@@ -15,8 +15,8 @@ def init_parser():
     '''
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-k', '--keep', required=True, help='BAM file of mapped reads to keep')
-    parser.add_argument('-r', '--remove', required=True, help='BAM file of mapped reads to remove')
+    parser.add_argument('-f', '--file', required=True, help='Composite Reference BAM file of mapped reads')
+    parser.add_argument('-k', '--keep_id', required=False, default='MN908947.3', type=str, help='Reference ID of genome to keep. Default: MN908947.3')
     parser.add_argument('-q', '--keep_minimum_quality', required=False, type=int, default=60, help='Minimum quality of the reads to keep')
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=0, help='Minimum quality of the reads to be included in removal')
     parser.add_argument('-m', '--minimum_read_length', required=False, type=int, default=251, help='Minimum length of reads to keep')
@@ -26,12 +26,12 @@ def init_parser():
     return parser
 
 
-def get_reads_to_remove(bamfile_path, input_mapping_quality, reads_to_remove=set(), count=0):
+def get_reads_to_remove(bamfile_path, input_mapping_quality, contig_ID, reads_to_remove=set(), count=0):
 
     bamfile = pysam.AlignmentFile(bamfile_path, "rb")
 
     for read in bamfile.fetch():
-        if read.mapping_quality >= input_mapping_quality:
+        if read.reference_name != contig_ID and read.mapping_quality >= input_mapping_quality:
             reads_to_remove.add(read.query_name)
             count += 1
     bamfile.close()
@@ -41,7 +41,7 @@ def get_reads_to_remove(bamfile_path, input_mapping_quality, reads_to_remove=set
 
 def read_pair_generator(bam, region_string=None):
     """
-    Generate read pairs for a BAM or SAM file or within a region string of said file.
+    Generate read pairs for a SAM or BAM file or within a region string of said file.
     Reads are added to read_dict until a pair is found.
     """
     read_dict = defaultdict(lambda: [None, None])
@@ -66,10 +66,12 @@ def read_pair_generator(bam, region_string=None):
 
 def remove_host_reads(bamfile_in, input_mapping_quality, remove_reads_set, reads_found=[], human_count=0, poor_quality_count=0):
 
-    bamfile = pysam.AlignmentFile(bamfile_in, "r")
+    bamfile = pysam.AlignmentFile(bamfile_in, "rb")
     header = bamfile.header
 
     for read_1, read_2 in read_pair_generator(bamfile):
+        if read_1 is None or read_2 is None:
+            continue
 
         if read_1.query_name in remove_reads_set:
             human_count += 2
@@ -97,11 +99,11 @@ def main():
     parser = init_parser()
     args = parser.parse_args()
 
-    sample_name = os.path.splitext(Path(args.keep).stem)[0]
+    sample_name = os.path.splitext(Path(args.file).stem)[0]
 
-    remove_reads_set, human_read_count = get_reads_to_remove(args.remove, args.remove_minimum_quality)
+    remove_reads_set, human_read_count = get_reads_to_remove(args.file, args.remove_minimum_quality, args.keep_id)
 
-    read_list, human_filtered_count, poor_quality_count, header = remove_host_reads(args.keep, args.keep_minimum_quality, remove_reads_set)
+    read_list, human_filtered_count, poor_quality_count, header = remove_host_reads(args.file, args.keep_minimum_quality, remove_reads_set)
 
     generate_dehosted_output(read_list, header, args.output)
 
