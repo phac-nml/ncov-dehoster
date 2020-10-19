@@ -6,5 +6,4 @@ dependencies:
   - samtools
   - bwa
   - pysam
-  - minimap2
   - csvtk

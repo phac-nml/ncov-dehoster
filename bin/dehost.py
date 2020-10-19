@@ -19,8 +19,6 @@ def init_parser():
     parser.add_argument('-k', '--keep_id', required=False, default='MN908947.3', type=str, help='Reference ID of genome to keep. Default: MN908947.3')
     parser.add_argument('-q', '--keep_minimum_quality', required=False, type=int, default=60, help='Minimum quality of the reads to keep')
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=0, help='Minimum quality of the reads to be included in removal')
-    parser.add_argument('-m', '--minimum_read_length', required=False, type=int, default=251, help='Minimum length of reads to keep')
-    parser.add_argument('-M', '--maximum_read_length', required=False, type=int, default=0, help='Maximum length of reads to keep')
     parser.add_argument('-o', '--output', required=False, default='out.bam', help='Output BAM name')
 
     return parser
