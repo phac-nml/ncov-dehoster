@@ -8,7 +8,7 @@ nextflow.preview.dsl = 2
 
 // subworkflows
 include {illuminaDehosting} from './workflows/illumina_dehosting.nf'
-//include {nanoporeDehosting} from './workflows/nanopore_dehosting.nf'
+include {nanoporeDehosting} from './workflows/nanopore_dehosting.nf'
 
 
 if ( !params.directory ) {
@@ -26,6 +26,11 @@ if ( params.illumina ) {
 } else if ( params.nanopore ) {
     if ( !params.directory ) {
         println("Please specify a directory containing fast5 files with --directory <path/to/fast5s>")
+        System.exit(1)
+    }
+
+    if ( !params.run_name) {
+        println("Please specify a run name for seperating out nanopore runs")
         System.exit(1)
     }
 } else {
@@ -48,7 +53,7 @@ workflow {
         if ( params.single_end ){
             Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
                         .set{ ch_fastqs }
-            
+
             println('Single end reads pipeline is not yet available')
             System.exit(1)
 
@@ -60,8 +65,26 @@ workflow {
         }
     
     } else if ( params.nanopore ) {
-        println('Nanopore pipeline not ready yet. This feature will be available soon (hopefully)')
-        System.exit(1)
+        // First check if barcoded
+        barcodedFast5 = file("${params.directory}/barcode*", type: 'dir', maxDepth: 1)
+        nonBarcodedFast5 = file("${params.directory}/*.fast5", type: 'file', maxDepth: 1)
+
+        // Use barcode to parallelize running if there are any
+        if ( barcodedFast5 ) {
+            Channel.fromPath( barcodedFast5 )
+                        .set{ ch_fast5 }
+
+            nanoporeDehosting(ch_fast5, ch_HumanReference, ch_CovidReference)
+
+        } else if ( nonBarcodedFast5 ) {
+            Channel.fromPath( "${params.directory}", type: 'dir', maxDepth: 1 )
+                        .set{ ch_fast5 }
+            System.exit(1)
+
+        } else {
+            System.exit(1)
+
+        }
 
     } else {
         println('Please specify either --illumina or --nanopore for the type of data that will be dehosted')

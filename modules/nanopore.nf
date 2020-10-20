@@ -1,62 +1,41 @@
-process minimap2 {
+process nanostripper {
 
-    publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.sorted.bam", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
 
-    label 'minimap'
+    label 'nanostripper'
 
-    tag { sampleName }
+    tag { barcodeName }
 
     input:
-    tuple path(fastq), file(human_ref), file(cov2019_ref)
+    tuple path(barcode), file(sars_reference), file(human_reference)
 
     output:
-    tuple sampleName, file("${sampleName}.sorted.bam")
-    
+    tuple barcodeName, path("fast5_dehosted/${barcodeName}")
 
     script:
-    sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
+
+    barcodeName = barcode.getBaseName().replaceAll(~/\.*$/, '')
 
     """
-    minimap2 -x map-ont -t 160 ${human_ref} ${cov2019_ref} ${fastq} -a | samtools sort --threads 10 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${barcode} 
     """
 }
 
-process samtoolsFlagstat {
+process guppyBasecaller {
 
-    publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.flagstats.txt", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}/test", pattern: "*.txt", mode: "copy"
 
-    label 'smallcpu'
+    label 'guppy'
 
-    tag { sampleName }
+    // input:
+    // tuple path(barcode), file(sars_reference), file(human_reference)
 
-    input:
-    tuple sampleName, file(sorted_bam)
-
-    output:
-
-    file("${sampleName}.flagstats.txt") 
+    // output:
+    // tuple sampleName, file("${sampleName}.sorted.bam")
 
     script:
+
     """
-    samtools flagstat ${sorted_bam} > ${sampleName}.flagstats.txt
-    """
-}
-
-process removeMappedReads {
-
-    label 'smallcpu'
-
-    tag { sampleName }
-
-    input:
-    tuple sampleName, file(sorted_bam)
-
-    output:
-    tuple sampleName, file("${sampleName}.unmapped.sorted.bam")
-    
-
-    script:
-    """
-    samtools view -f4 -b --threads 4 -o ${sampleName}.unmapped.sorted.bam ${sorted_bam}
+    echo hi >> f.txt
     """
 }
