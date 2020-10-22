@@ -44,17 +44,17 @@ workflow nanoporeDehosting {
           guppyBasecallerGPU(nanostripper.out.dehostedFast5.collect())
 
           guppyBasecallerGPU.out
-                            .set{ ch_basecalled }
+                            .set{ ch_basecalled_fastqs }
 
         } else {
           guppyBasecallerCPU(nanostripper.out.dehostedFast5)
 
           guppyBasecallerCPU.out.collect()
-                            .set{ ch_basecalled }
+                            .set{ ch_basecalled_fastqs }
         }
 
         // Back to the same processes after basecalling
-        combineFastq(ch_basecalled)
+        combineFastq(ch_basecalled_fastqs)
 
         fastqSizeSelection(combineFastq.out)
 

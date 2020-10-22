@@ -45,15 +45,15 @@ process guppyBasecallerCPU {
     label 'guppyCPU'
 
     input:
-    path(dehosted_fast5)
+    path(dehosted_fast5_barcode)
 
     output:
-    path "fastq_pass_dehosted_only/*"
+    path "fastq_pass_dehosted_only/$dehosted_fast5_barcode"
 
     script:
 
     """
-    guppy_basecaller -c dna_r9.4.1_450bps_hac.cfg -r -i $dehosted_fast5 -s fastq_pass_dehosted_only/$dehosted_fast5
+    guppy_basecaller -c dna_r9.4.1_450bps_hac.cfg -r -i $dehosted_fast5_barcode -s fastq_pass_dehosted_only/$dehosted_fast5_barcode
     """
 }
 
@@ -62,14 +62,14 @@ process combineFastq {
     label 'largeMem'
 
     input:
-    path(dehosted_fastq)
+    path(fastq_pass_dehosted_only)
 
     output:
     file "combined.fastq"
 
     script:
     """
-    find $dehosted_fastq -type f -name "*.fastq"  -exec cat {} \\; > combined.fastq
+    cat ./${fastq_pass_dehosted_only}/*/*.fastq > combined.fastq
     """
 }
 
@@ -95,7 +95,7 @@ process fastqDemultiplex {
 
     label 'largeMem'
 
-    publishDir "${params.outdir}/${params.run_name}", pattern: "fastq_pass/*", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fastq_pass", mode: "copy"
 
     input:
     file(dehosted_combined_fastq)
