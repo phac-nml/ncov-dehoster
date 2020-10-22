@@ -66,7 +66,7 @@ workflow {
     
     } else if ( params.nanopore ) {
         // First check if barcoded
-        barcodedFast5 = file("${params.directory}/barcode*", type: 'dir', maxDepth: 1)
+        barcodedFast5 = file("${params.directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
         nonBarcodedFast5 = file("${params.directory}/*.fast5", type: 'file', maxDepth: 1)
 
         // Use barcode to parallelize running if there are any

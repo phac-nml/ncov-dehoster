@@ -7,35 +7,104 @@ process nanostripper {
     tag { barcodeName }
 
     input:
-    tuple path(barcode), file(sars_reference), file(human_reference)
+    tuple path(folder), file(sars_reference), file(human_reference)
 
     output:
-    tuple barcodeName, path("fast5_dehosted/${barcodeName}")
+    path "fast5_dehosted/${barcodeName}", emit: dehostedFast5
+    val "${barcodeName}", emit: barcode
 
     script:
 
-    barcodeName = barcode.getBaseName().replaceAll(~/\.*$/, '')
+    barcodeName = folder.getBaseName().replaceAll(~/\.*$/, '')
 
+    // Temporary path to nanostripper while conda env in progress
     """
-    nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${barcode} 
+    /Drives/W/Projects/covid-19/nml_reads/vdd/dehosting_runs/nanostripper/nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder} 
     """
 }
 
-process guppyBasecaller {
+process guppyBasecallerGPU {
 
-    publishDir "${params.outdir}/${params.run_name}/test", pattern: "*.txt", mode: "copy"
+    label 'guppyGPU'
 
-    label 'guppy'
+    input:
+    path(dehosted_fast5s)
 
-    // input:
-    // tuple path(barcode), file(sars_reference), file(human_reference)
-
-    // output:
-    // tuple sampleName, file("${sampleName}.sorted.bam")
+    output:
+    path "fastq_pass_dehosted_only"
 
     script:
 
     """
-    echo hi >> f.txt
+    bash guppy-gpu.sh ${params.max_parallel_basecalling} ${params.gpu_per_node}
+    """
+}
+
+process guppyBasecallerCPU {
+
+    label 'guppyCPU'
+
+    input:
+    path(dehosted_fast5)
+
+    output:
+    path "fastq_pass_dehosted_only/*"
+
+    script:
+
+    """
+    guppy_basecaller -c dna_r9.4.1_450bps_hac.cfg -r -i $dehosted_fast5 -s fastq_pass_dehosted_only/$dehosted_fast5
+    """
+}
+
+process combineFastq {
+
+    label 'largeMem'
+
+    input:
+    path(dehosted_fastq)
+
+    output:
+    file "combined.fastq"
+
+    script:
+    """
+    find $dehosted_fastq -type f -name "*.fastq"  -exec cat {} \\; > combined.fastq
+    """
+}
+
+process fastqSizeSelection {
+
+    label 'largeMem'
+
+    input:
+    file(combined_fastq)
+
+    output:
+    file "${params.run_name}*.fastq"
+
+    script:
+    """
+    mkdir -p fastq_pass_combined_dehosted
+    mv $combined_fastq fastq_pass_combined_dehosted
+    artic guppyplex --min-length ${params.min_length} --max-length ${params.max_length} --directory ./fastq_pass_combined_dehosted --prefix ${params.run_name} 
+    """
+}
+
+process fastqDemultiplex {
+
+    label 'largeMem'
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fastq_pass/*", mode: "copy"
+
+    input:
+    file(dehosted_combined_fastq)
+
+    output:
+    path "fastq_pass"
+
+    script:
+    """
+    guppy_barcoder --require_barcodes_both_ends -i ./ -s fastq_pass --arrangements_files 'barcode_arrs_nb12.cfg barcode_arrs_nb24.cfg barcode_arrs_nb96.cfg'
     """
 }
