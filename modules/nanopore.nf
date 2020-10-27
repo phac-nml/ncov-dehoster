@@ -102,9 +102,53 @@ process fastqDemultiplex {
 
     output:
     path "fastq_pass"
+    path "fastq_pass/*", type: 'dir', emit: barcodes
 
     script:
     """
     guppy_barcoder --require_barcodes_both_ends -i ./ -s fastq_pass --arrangements_files 'barcode_arrs_nb12.cfg barcode_arrs_nb24.cfg barcode_arrs_nb96.cfg'
+    """
+}
+
+process combineFast5Barcodes {
+
+    // Done to make a single directory of the fast5 dehosted only files for regenerateFast5 process
+
+    label 'smallmem'
+
+    input:
+    path(dehosted_fast5s)
+
+    output:
+    path "fast5_pass_dehosted_only"
+
+    script:
+
+    """
+    mkdir -p fast5_pass_dehosted_only
+    mv $dehosted_fast5s fast5_pass_dehosted_only/
+    """
+}
+
+process regenerateFast5s {
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_pass/${barcodeName}", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}", pattern: "sequencing_summary.txt", mode: "copy"
+
+    input:
+    path(dehosted_fastq_barcode)
+    path(fast5_dehosted)
+
+    output:
+    path "fast5_pass/${barcodeName}"
+    path "sequencing_summary.txt"
+
+    script:
+
+    barcodeName = dehosted_fastq_barcode.getBaseName().replaceAll(~/\.*$/, '')
+
+    """
+    bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted
+    cat <(echo -e "read_id\tfilename") <(cat ./fast5_pass/*/filename_mapping.txt) > sequencing_summary.txt
     """
 }

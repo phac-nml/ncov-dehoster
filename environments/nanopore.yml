@@ -5,3 +5,4 @@ channels:
 dependencies:
   - samtools
   - minimap2
+  - ont-fast5-api
