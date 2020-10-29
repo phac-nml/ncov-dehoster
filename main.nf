@@ -70,9 +70,18 @@ workflow {
         nonBarcodedFast5 = file("${params.directory}/*.fast5", type: 'file', maxDepth: 1)
 
         // Use barcode to parallelize running if there are any
+        // Doesn't like softlinked directories, checks that we have files
         if ( barcodedFast5 ) {
             Channel.fromPath( barcodedFast5 )
-                        .set{ ch_fast5 }
+                .filter{ d ->
+                            def count = 0
+                            for (x in d.listFiles()) {
+                                if (x.isFile()) {
+                                    count += 1
+                                }
+                            }
+                            count > 0
+                }.set{ ch_fast5 }
 
             nanoporeDehosting(ch_fast5, ch_HumanReference, ch_CovidReference)
 

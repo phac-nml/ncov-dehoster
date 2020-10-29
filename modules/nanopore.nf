@@ -133,7 +133,6 @@ process combineFast5Barcodes {
 process regenerateFast5s {
 
     publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_pass/${barcodeName}", mode: "copy"
-    publishDir "${params.outdir}/${params.run_name}", pattern: "sequencing_summary.txt", mode: "copy"
 
     input:
     path(dehosted_fastq_barcode)
@@ -141,7 +140,6 @@ process regenerateFast5s {
 
     output:
     path "fast5_pass/${barcodeName}"
-    path "sequencing_summary.txt"
 
     script:
 
@@ -149,6 +147,21 @@ process regenerateFast5s {
 
     """
     bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted
-    cat <(echo -e "read_id\tfilename") <(cat ./fast5_pass/*/filename_mapping.txt) > sequencing_summary.txt
+    """
+}
+
+process generateSimpleSequencingSummary {
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "sequencing_summary.txt", mode: "copy"
+
+    input:
+    path(fast5_barcode)
+
+    output:
+    path "sequencing_summary.txt"
+
+    script:
+    """
+    cat <(echo -e "read_id\tfilename") <(cat ./*/filename_mapping.txt) > sequencing_summary.txt
     """
 }

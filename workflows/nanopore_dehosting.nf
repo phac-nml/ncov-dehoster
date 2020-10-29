@@ -12,6 +12,7 @@ include {fastqSizeSelection} from '../modules/nanopore.nf'
 include {fastqDemultiplex} from '../modules/nanopore.nf'
 include {combineFast5Barcodes} from '../modules/nanopore.nf'
 include {regenerateFast5s} from '../modules/nanopore.nf'
+include {generateSimpleSequencingSummary} from '../modules/nanopore.nf'
 
 
 // Workflow
@@ -71,8 +72,10 @@ workflow nanoporeDehosting {
         regenerateFast5s(fastqDemultiplex.out.barcodes.flatten(),
                           combineFast5Barcodes.out)
 
+        generateSimpleSequencingSummary(regenerateFast5s.out.collect())
+
       } else {
-        println('WARNING: dehosted fast5 files cannot be basecalled without a specified guppy environment, dehosting fast5 files and then exiting')
+        println('WARNING: dehosted fast5 files cannot be basecalled without a specified guppy environment, dehosting fast5 files only and then exiting')
       }
 
 }
