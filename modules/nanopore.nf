@@ -1,62 +1,166 @@
-process minimap2 {
+process nanostripper {
 
-    publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.sorted.bam", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
 
-    label 'minimap'
+    label 'nanostripper'
 
-    tag { sampleName }
+    tag { barcodeName }
 
     input:
-    tuple path(fastq), file(human_ref), file(cov2019_ref)
+    tuple path(folder), file(sars_reference), file(human_reference)
 
     output:
-    tuple sampleName, file("${sampleName}.sorted.bam")
-    
+    path "fast5_dehosted/${barcodeName}", emit: dehostedFast5
+    val "${barcodeName}", emit: barcode
 
     script:
-    sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
 
+    barcodeName = folder.getBaseName().replaceAll(~/\.*$/, '')
+
+    // Temporary path to nanostripper used while conda env in progress
+    // Temporary path to nanostripper tool while I look for a better solution
     """
-    minimap2 -x map-ont -t 160 ${human_ref} ${cov2019_ref} ${fastq} -a | samtools sort --threads 10 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    ${params.nanostripper_tool_path}nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder} 
     """
 }
 
-process samtoolsFlagstat {
+process guppyBasecallerGPU {
 
-    publishDir "${params.outdir}/${task.process.replaceAll(":","_")}", pattern: "${sampleName}.flagstats.txt", mode: "copy"
-
-    label 'smallcpu'
-
-    tag { sampleName }
+    label 'guppyGPU'
 
     input:
-    tuple sampleName, file(sorted_bam)
+    path(dehosted_fast5s)
 
     output:
-
-    file("${sampleName}.flagstats.txt") 
+    path "fastq_pass_dehosted_only"
 
     script:
     """
-    samtools flagstat ${sorted_bam} > ${sampleName}.flagstats.txt
+    bash guppy-gpu.sh ${params.max_parallel_basecalling} ${params.gpu_per_node}
     """
 }
 
-process removeMappedReads {
+process guppyBasecallerCPU {
 
-    label 'smallcpu'
-
-    tag { sampleName }
+    label 'guppyCPU'
 
     input:
-    tuple sampleName, file(sorted_bam)
+    path(dehosted_fast5_barcode)
 
     output:
-    tuple sampleName, file("${sampleName}.unmapped.sorted.bam")
-    
+    path "fastq_pass_dehosted_only/$dehosted_fast5_barcode"
 
     script:
     """
-    samtools view -f4 -b --threads 4 -o ${sampleName}.unmapped.sorted.bam ${sorted_bam}
+    guppy_basecaller -c dna_r9.4.1_450bps_hac.cfg -r -i $dehosted_fast5_barcode -s fastq_pass_dehosted_only/$dehosted_fast5_barcode
+    """
+}
+
+process combineFastq {
+
+    label 'largeMem'
+
+    input:
+    path(fastq_pass_dehosted_only)
+
+    output:
+    file "combined.fastq"
+
+    script:
+    """
+    cat ./${fastq_pass_dehosted_only}/*/*.fastq > combined.fastq
+    """
+}
+
+process fastqSizeSelection {
+
+    label 'largeMem'
+
+    input:
+    file(combined_fastq)
+
+    output:
+    file "${params.run_name}*.fastq"
+
+    script:
+    """
+    mkdir -p fastq_pass_combined_dehosted
+    mv $combined_fastq fastq_pass_combined_dehosted
+    artic guppyplex --min-length ${params.min_length} --max-length ${params.max_length} --directory ./fastq_pass_combined_dehosted --prefix ${params.run_name} 
+    """
+}
+
+process fastqDemultiplex {
+
+    label 'largeMem'
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fastq_pass", mode: "copy"
+
+    input:
+    file(dehosted_combined_fastq)
+
+    output:
+    path "fastq_pass"
+    path "fastq_pass/*", type: 'dir', emit: barcodes
+
+    script:
+    """
+    guppy_barcoder --require_barcodes_both_ends -i ./ -s fastq_pass --arrangements_files 'barcode_arrs_nb12.cfg barcode_arrs_nb24.cfg barcode_arrs_nb96.cfg'
+    """
+}
+
+process combineFast5Barcodes {
+
+    // Done to make a single directory of the fast5 dehosted only files for regenerateFast5 process
+
+    label 'smallmem'
+
+    input:
+    path(dehosted_fast5s)
+
+    output:
+    path "fast5_pass_dehosted_only"
+
+    script:
+
+    """
+    mkdir -p fast5_pass_dehosted_only
+    mv $dehosted_fast5s fast5_pass_dehosted_only/
+    """
+}
+
+process regenerateFast5s {
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_pass/${barcodeName}", mode: "copy"
+
+    input:
+    path(dehosted_fastq_barcode)
+    path(fast5_dehosted)
+
+    output:
+    path "fast5_pass/${barcodeName}"
+
+    script:
+
+    barcodeName = dehosted_fastq_barcode.getBaseName().replaceAll(~/\.*$/, '')
+
+    """
+    bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted
+    """
+}
+
+process generateSimpleSequencingSummary {
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "sequencing_summary.txt", mode: "copy"
+
+    input:
+    path(fast5_barcode)
+
+    output:
+    path "sequencing_summary.txt"
+
+    script:
+    """
+    cat <(echo -e "read_id\tfilename") <(cat ./*/filename_mapping.txt) > sequencing_summary.txt
     """
 }
