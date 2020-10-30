@@ -71,6 +71,7 @@ workflow {
 
         // Use barcode to parallelize running if there are any
         // Doesn't like softlinked directories, checks that we have files
+        // If not done, errors on blank barcoded directories
         if ( barcodedFast5 ) {
             Channel.fromPath( barcodedFast5 )
                 .filter{ d ->

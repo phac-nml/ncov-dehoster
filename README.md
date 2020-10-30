@@ -5,7 +5,11 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore
 
 **Illumina** - Competitive mapping approach with bwa mem to remove human reads from the input fastq files while maintaining as many viral reads as possible
 
-**Nanopore** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and then subsequently [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate de-hosted, demultiplexed fast5 and fastq files from input fast5 files
+**Nanopore** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and then subsequently [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate de-hosted, demultiplexed fast5 and fastq files from input fast5 files. 
+
+*Currently* nanopore dehosting is still a little rough and you will also have to provide a path to the nanostripper environment along with the tool itself with the following:
+`--nanostripper_env_path <path/to/nanostripper/env`
+`--nanostripper_tool_path <path/to/nanostripper/tool`
 
 ------
 
@@ -31,7 +35,7 @@ Run the full **Nanopore** pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --directory <path/to/fast5_pass/> --human_ref <path/to/reference> --run_name 'whatever_you_want' --guppyCPU </path/to/conda_env/guppy-4.0.11-cpu/>
 ```
 
-You can also just generate de-hosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create you're own environment for it
+You can also just generate de-hosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
 
 ------
 
@@ -136,9 +140,13 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
 
 ------
 
-### Nanopore De-hosting Pipeline
+### Nanopore Fast5 De-hosting and Regeneration Pipeline
 
 #### **Inputs**
+
+Specify running Nanopore dehosting with the --nanopore parameter.
+
+Other parameters include:
 
 | Parameter | Description | Default | Optional |
 |-|-|-|-|

@@ -17,9 +17,10 @@ process nanostripper {
 
     barcodeName = folder.getBaseName().replaceAll(~/\.*$/, '')
 
-    // Temporary path to nanostripper while conda env in progress
+    // Temporary path to nanostripper used while conda env in progress
+    // Temporary path to nanostripper tool while I look for a better solution
     """
-    /Drives/W/Projects/covid-19/nml_reads/vdd/dehosting_runs/nanostripper/nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder} 
+    ${params.nanostripper_tool_path}nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder} 
     """
 }
 
@@ -34,7 +35,6 @@ process guppyBasecallerGPU {
     path "fastq_pass_dehosted_only"
 
     script:
-
     """
     bash guppy-gpu.sh ${params.max_parallel_basecalling} ${params.gpu_per_node}
     """
@@ -51,7 +51,6 @@ process guppyBasecallerCPU {
     path "fastq_pass_dehosted_only/$dehosted_fast5_barcode"
 
     script:
-
     """
     guppy_basecaller -c dna_r9.4.1_450bps_hac.cfg -r -i $dehosted_fast5_barcode -s fastq_pass_dehosted_only/$dehosted_fast5_barcode
     """
