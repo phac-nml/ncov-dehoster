@@ -162,7 +162,7 @@ Other parameters include:
 
 #### **Outputs**
 
-Found in `./results/<run_name>/` directory, the outputs for the Nanopore pipeline include:
+Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pipeline include:
 
 - dehosted_fast5 --> Folder containing the dehosted fast5 results of nanostripper for each barcode
 
@@ -171,6 +171,8 @@ Found in `./results/<run_name>/` directory, the outputs for the Nanopore pipelin
 - fastq_pass --> Folder containing the finished de-hosted demultiplexed fastq files that can be used for another analysis
 
 - sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file
+
+The output structure is setup as such so that the `run_name` organizes the sequencing data in the `run` folder and all analyses can be done in the `run_name` folder to separate out runs better.
 
 #### **Process**
 

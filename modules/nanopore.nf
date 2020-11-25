@@ -1,6 +1,6 @@
 process nanostripper {
 
-    publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
 
     label 'nanostripper'
 
@@ -20,7 +20,8 @@ process nanostripper {
     // Temporary path to nanostripper used while conda env in progress
     // Temporary path to nanostripper tool while I look for a better solution
     """
-    ${params.nanostripper_tool_path}nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder} 
+    ${params.nanostripper_tool_path}nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder}
+    mv ./fast5_dehosted/nanostripper_summary.txt ./fast5_dehosted/${barcodeName}
     """
 }
 
@@ -94,7 +95,7 @@ process fastqDemultiplex {
 
     label 'largeMem'
 
-    publishDir "${params.outdir}/${params.run_name}", pattern: "fastq_pass", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fastq_pass", mode: "copy"
 
     input:
     file(dehosted_combined_fastq)
@@ -131,27 +132,32 @@ process combineFast5Barcodes {
 
 process regenerateFast5s {
 
-    publishDir "${params.outdir}/${params.run_name}", pattern: "fast5_pass/${barcodeName}", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${barcodeName}", mode: "copy"
 
     input:
     path(dehosted_fastq_barcode)
     path(fast5_dehosted)
 
     output:
-    path "fast5_pass/${barcodeName}"
+    path "fast5_pass/${barcodeName}" , emit: fast5_pass
+    path "${barcodeName}.csv" , emit: csv
 
     script:
 
     barcodeName = dehosted_fastq_barcode.getBaseName().replaceAll(~/\.*$/, '')
 
+    def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
+
     """
     bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted
+
+    bash generate-csv.sh ${barcodeName} ${fast5_dehosted}/${barcodeName}/nanostripper_summary.txt fast5_pass/${barcodeName}/filename_mapping.txt ${rev}
     """
 }
 
 process generateSimpleSequencingSummary {
 
-    publishDir "${params.outdir}/${params.run_name}", pattern: "sequencing_summary.txt", mode: "copy"
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "sequencing_summary.txt", mode: "copy"
 
     input:
     path(fast5_barcode)
@@ -162,5 +168,24 @@ process generateSimpleSequencingSummary {
     script:
     """
     cat <(echo -e "read_id\tfilename") <(cat ./*/filename_mapping.txt) > sequencing_summary.txt
+    """
+}
+
+process combineCSVs {
+
+    publishDir "${params.outdir}/${params.run_name}", pattern: "removal_summary.csv", mode: "copy"
+
+    label 'smallcpu'
+
+    input:
+    path(csvs)
+
+    output:
+    path("removal_summary.csv")
+
+    script:
+    """
+    csvtk concat *.csv > summary.csv
+    csvtk sort -k1 summary.csv > removal_summary.csv
     """
 }
