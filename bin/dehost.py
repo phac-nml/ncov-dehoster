@@ -20,6 +20,7 @@ def init_parser():
     parser.add_argument('-q', '--keep_minimum_quality', required=False, type=int, default=60, help='Minimum quality of the reads to keep')
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=0, help='Minimum quality of the reads to be included in removal')
     parser.add_argument('-o', '--output', required=False, default='out.bam', help='Output BAM name')
+    parser.add_argument('-R', '--revision', required=False, default='NA', help='Pass a pipeline commit hash to keep track of what version was ran')
 
     return parser
 
@@ -114,7 +115,8 @@ def main():
                 'human_reads_filtered' : human_filtered_count, 
                 'poor_quality_reads_filtered' : poor_quality_count,
                 'paired_reads_kept' : len(read_list),
-                'percentage_kept' : "{:.2f}".format(percentage_kept)}
+                'percentage_kept' : "{:.2f}".format(percentage_kept),
+                'github_commit' : args.revision}
 
     with open('{}_stats.csv'.format(sample_name), 'w') as csvfile:
         header = line.keys()
