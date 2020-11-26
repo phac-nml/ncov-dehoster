@@ -69,7 +69,7 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
 
 - dehosted_paired_fastqs --> Folder containing the final de-hosted, paired fastq reads (main and final output)
 
-- removal_summary --> CSV file containing read removal metrics (with more to come)
+- removal_summary --> CSV file containing read removal metrics
 
 #### **Process**
 
@@ -171,6 +171,8 @@ Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pip
 - fastq_pass --> Folder containing the finished de-hosted demultiplexed fastq files that can be used for another analysis
 
 - sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file
+
+- removal_summary --> CSV file containing read removal metrics. Found in `./results/<run_name>/` instead
 
 The output structure is setup as such so that the `run_name` organizes the sequencing data in the `run` folder and all analyses can be done in the `run_name` folder to separate out runs better.
 
@@ -287,10 +289,6 @@ ex. [NML](https://github.com/phac-nml/ncov-dehoster/blob/master/conf/custom/nml.
 - This is an initial version and there are potentially still bugs and changes to be made, although it seems to be working as intended 
 
 ## Upcoming (Potentially) Additions and Changes:
-
-- More info in `removal_summary.csv` output for Illumina data
-
-- Removal info for Nanopore data
 
 - Single-end fastq de-hosting (maybe)
 

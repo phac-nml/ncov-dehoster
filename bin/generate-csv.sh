@@ -16,7 +16,7 @@ filename_mapping_path=$3
 rev=$4
 
 # Set up csv file with headers
-echo "barcode,num_stripped_reads,num_kept_reads,pipeline_revision" > ${barcodeName}.csv
+echo "barcode,num_stripped_reads,num_kept_reads,github_commit" > ${barcodeName}.csv
 
 # Get values
 stripped=`wc -l < ${nanostripper_summary_path}`
