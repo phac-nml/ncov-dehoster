@@ -20,7 +20,7 @@ process nanostripper {
     // Temporary path to nanostripper used while conda env in progress
     // Temporary path to nanostripper tool while I look for a better solution
     """
-    ${params.nanostripper_tool_path}nanostripper -out ./fast5_dehosted -t 10 ${sars_reference} ${human_reference} ${folder}
+    ${params.nanostripper_tool_path}nanostripper -out ./fast5_dehosted -t 8 ${sars_reference} ${human_reference} ${folder}
     mv ./fast5_dehosted/nanostripper_summary.txt ./fast5_dehosted/${barcodeName}
     """
 }
