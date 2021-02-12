@@ -25,7 +25,7 @@ Run the **Illumina** pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/paired_reads/dir> --human_ref <path/to/reference>
 ```
 
-Minimum computational specs required fore the Illumina dehosting pipeline are 3+ cpu and 16+G memory.
+Minimum computational specs required for the Illumina dehosting pipeline are 3+ cpu and 16+G memory.
 
 ### Nanopore
 
@@ -81,13 +81,13 @@ Full instructions on how to easily install and run the Illumina dehosting pipeli
     nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa>
     ```
 
-3. All subsequent runs can be extremely sped up using the `results/humanBWAIndex` folder as follows
+3. All subsequent runs can be extremely sped up using the `full/path/to/results/humanBWAIndex` folder as follows
 
     ```
-    nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index </path/to/results/humanBWAIndex/>
+    nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index </full/path/to/results/humanBWAIndex/>
     ```
 
-Note that at the moment, running without a specified index may only dehost one read. In that case, re-run the pipeline with the added `--composite_bwa_index </path/to/results/humanBWAIndex/>` flag to it and you will be good. This is being worked on to be fixed.
+Note: At the moment, you need to specify the full path to the made index or the pipeline will error out! But adding this removes the > 1 hour indexing step!
 
 #### **Outputs**
 
