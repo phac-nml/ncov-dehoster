@@ -25,6 +25,8 @@ Run the **Illumina** pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/paired_reads/dir> --human_ref <path/to/reference>
 ```
 
+Minimum computational specs required fore the Illumina dehosting pipeline are 3+ cpu and 16+G memory.
+
 ### Nanopore
 
 *Requires conda* due to use of guppy environments as parameters
@@ -36,6 +38,8 @@ nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --directory <path/
 ```
 
 You can also just generate de-hosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
+
+Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory
 
 ------
 
@@ -59,10 +63,9 @@ Other parameters include:
 | remove_min_map_quality | Minimum mapping quality of the human reads to remove | 0 | No |
 | composite_bwa_index | Directory containing BWA indexes for a composite human/viral reference --  **Speeds up analysis if given | None | Yes |
 
-
 #### **Running**
 
-Full instructions on how to easily install and run the Illumina dehosting pipeline. These instructions can be run on a computer with 3+ cores and 16+G memory using the min_illumina profile. In general, the slowest step by far is the indexing and once that is done once, you can specify the path to it to speed up all subsequent analyses. 
+Full instructions on how to easily install and run the Illumina dehosting pipeline.
 
 1. Setup all necessary resources:
 
@@ -75,17 +78,16 @@ Full instructions on how to easily install and run the Illumina dehosting pipeli
 2. Activate the conda environment and run the pipeline
 
     ```
-    nextflow run phac-nml/ncov-dehoster -profile conda,min_illumina --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa>
+    nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa>
     ```
 
 3. All subsequent runs can be extremely sped up using the `results/humanBWAIndex` folder as follows
 
     ```
-    nextflow run phac-nml/ncov-dehoster -profile conda,min_illumina --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index </path/to/results/humanBWAIndex/>
+    nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index </path/to/results/humanBWAIndex/>
     ```
 
 Note that at the moment, running without a specified index may only dehost one read. In that case, re-run the pipeline with the added `--composite_bwa_index </path/to/results/humanBWAIndex/>` flag to it and you will be good. This is being worked on to be fixed.
-
 
 #### **Outputs**
 
