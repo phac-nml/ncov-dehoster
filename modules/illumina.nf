@@ -33,6 +33,7 @@ process grabCompositeIndex {
 }
 
 process indexCompositeReference {
+    publishDir "${params.outdir}/humanBWAIndex", pattern: "*.fa*", mode: "symlink"
 
     label 'bwa_composite_index'
 
@@ -64,7 +65,7 @@ process mapToCompositeIndex {
 
     script:
     """
-    bwa mem -t 8 ${composite_reference} ${forward} ${reverse} | samtools sort --threads 6 -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    bwa mem -t ${params.threads} ${composite_reference} ${forward} ${reverse} | samtools sort --threads ${params.threads} -T "temp" -O BAM -o ${sampleName}.sorted.bam
     samtools flagstat ${sampleName}.sorted.bam > ${sampleName}.flagstats.txt
     """
 }
