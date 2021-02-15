@@ -87,7 +87,7 @@ Full instructions on how to easily install and run the Illumina dehosting pipeli
     nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index </full/path/to/results/humanBWAIndex/>
     ```
 
-Note: At the moment, you need to specify the full path to the made index or the pipeline will error out! But adding this removes the > 1 hour indexing step!
+**Note**: At the moment, you need to specify the full path to the made index or the pipeline will error out! But adding this removes the > 1 hour indexing step!
 
 #### **Outputs**
 
