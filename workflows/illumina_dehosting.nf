@@ -32,7 +32,7 @@ workflow illuminaDehosting {
     } else {
       indexCompositeReference(generateCompositeReference.out)
 
-      indexCompositeReference.out
+      indexCompositeReference.out.collect()
               .set{ ch_index }
     }
 

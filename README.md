@@ -25,6 +25,8 @@ Run the **Illumina** pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/paired_reads/dir> --human_ref <path/to/reference>
 ```
 
+Minimum computational specs required for the Illumina dehosting pipeline are 3+ cpu and 16+G memory.
+
 ### Nanopore
 
 *Requires conda* due to use of guppy environments as parameters
@@ -36,6 +38,8 @@ nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --directory <path/
 ```
 
 You can also just generate de-hosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
+
+Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory
 
 ------
 
@@ -58,6 +62,32 @@ Other parameters include:
 | keep_min_map_quality | Minimum mapping quality of covid reads to keep | 60 | No |
 | remove_min_map_quality | Minimum mapping quality of the human reads to remove | 0 | No |
 | composite_bwa_index | Directory containing BWA indexes for a composite human/viral reference --  **Speeds up analysis if given | None | Yes |
+
+#### **Running**
+
+Full instructions on how to easily install and run the Illumina dehosting pipeline.
+
+1. Setup all necessary resources:
+
+    - [Conda](https://conda.io/en/latest/miniconda.html) with nextflow installed into an environment
+
+    - A copy of the hg38 human reference genome
+
+    - Folder with paired `fastq` or `fastq.gz` files to dehost
+
+2. Activate the conda environment and run the pipeline
+
+    ```
+    nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa>
+    ```
+
+3. All subsequent runs can be extremely sped up using the `full/path/to/results/humanBWAIndex` folder as follows
+
+    ```
+    nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index </full/path/to/results/humanBWAIndex/>
+    ```
+
+**Note**: At the moment, you need to specify the full path to the made index or the pipeline will error out! But adding this removes the > 1 hour indexing step!
 
 #### **Outputs**
 
