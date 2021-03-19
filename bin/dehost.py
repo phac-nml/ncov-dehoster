@@ -25,19 +25,6 @@ def init_parser():
     return parser
 
 
-def get_reads_to_remove(bamfile_path, input_mapping_quality, contig_ID, reads_to_remove=set(), count=0):
-
-    bamfile = pysam.AlignmentFile(bamfile_path, "rb")
-
-    for read in bamfile.fetch():
-        if read.reference_name != contig_ID and read.mapping_quality >= input_mapping_quality:
-            reads_to_remove.add(read.query_name)
-            count += 1
-    bamfile.close()
-
-    return reads_to_remove, count
-
-
 def read_pair_generator(bam, region_string=None):
     """
     Generate read pairs for a SAM or BAM file or within a region string of said file.
@@ -63,7 +50,10 @@ def read_pair_generator(bam, region_string=None):
             del read_dict[qname]
 
 
-def remove_host_reads(bamfile_in, input_mapping_quality, remove_reads_set, reads_found=[], human_count=0, poor_quality_count=0):
+def remove_host_reads(bamfile_in, human_mapping_quality, contigID, covid_mapping_quality, reads_found=[], human_count=0, poor_quality_count=0):
+    """
+    Remove reads that map above human_mapping_quality or that don't map strong enough to contigID
+    """
 
     bamfile = pysam.AlignmentFile(bamfile_in, "rb")
     header = bamfile.header
@@ -72,11 +62,13 @@ def remove_host_reads(bamfile_in, input_mapping_quality, remove_reads_set, reads
         if read_1 is None or read_2 is None:
             continue
 
-        if read_1.query_name in remove_reads_set:
+        if read_1.reference_name != contigID and read_1.mapping_quality >= human_mapping_quality:
             human_count += 2
-            continue
 
-        elif read_1.mapping_quality >= input_mapping_quality and read_2.mapping_quality >= input_mapping_quality:
+        elif read_2.reference_name != contigID and read_2.mapping_quality >= human_mapping_quality:
+            human_count += 2
+
+        elif read_1.mapping_quality >= covid_mapping_quality and read_2.mapping_quality >= covid_mapping_quality:
             reads_found.append(read_1)
             reads_found.append(read_2)
 
@@ -100,9 +92,7 @@ def main():
 
     sample_name = os.path.splitext(Path(args.file).stem)[0]
 
-    remove_reads_set, human_read_count = get_reads_to_remove(args.file, args.remove_minimum_quality, args.keep_id)
-
-    read_list, human_filtered_count, poor_quality_count, header = remove_host_reads(args.file, args.keep_minimum_quality, remove_reads_set)
+    read_list, human_filtered_count, poor_quality_count, header = remove_host_reads(args.file, args.remove_minimum_quality, args.keep_id, args.keep_minimum_quality)
 
     generate_dehosted_output(read_list, header, args.output)
 
