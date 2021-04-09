@@ -113,7 +113,7 @@ process generateDehostedReads {
 
     script:
     """
-    samtools fastq -1 ${sampleName}-dehosted_R1.fastq -2 ${sampleName}-dehosted_R2.fastq ${dehosted_bam}
+    samtools fastq -1 ${sampleName}-dehosted_R1.fastq.gz -2 ${sampleName}-dehosted_R2.fastq.gz ${dehosted_bam}
     """
 }
 
