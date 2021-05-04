@@ -101,7 +101,7 @@ process dehostBamFiles {
 
 process generateDehostedReads {
 
-    publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}-dehosted_R*", mode: "copy"
+    publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}_dehosted_R*", mode: "copy"
 
     label 'mediumcpu'
 
@@ -109,11 +109,11 @@ process generateDehostedReads {
     tuple(sampleName, path(dehosted_bam))
 
     output:
-    path("${sampleName}-dehosted_R*")
+    path("${sampleName}_dehosted_R*")
 
     script:
     """
-    samtools fastq -1 ${sampleName}-dehosted_R1.fastq.gz -2 ${sampleName}-dehosted_R2.fastq.gz ${dehosted_bam}
+    samtools fastq -1 ${sampleName}_dehosted_R1.fastq.gz -2 ${sampleName}_dehosted_R2.fastq.gz ${dehosted_bam}
     """
 }
 
