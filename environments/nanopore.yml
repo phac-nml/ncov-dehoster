@@ -7,3 +7,6 @@ dependencies:
   - minimap2
   - ont-fast5-api
   - csvtk
+  - pip
+  - pip:
+    - pysam

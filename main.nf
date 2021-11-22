@@ -1,32 +1,41 @@
 #!/usr/bin/env nextflow
 
 // enable dsl2
-nextflow.preview.dsl = 2
+nextflow.enable.dsl = 2
 
 // Modules
 // None at the moment, add some here if need to pre-process reads (like find no inputs etc)
 
 // subworkflows
 include {illuminaDehosting} from './workflows/illumina_dehosting.nf'
-include {nanoporeDehosting} from './workflows/nanopore_dehosting.nf'
+include {nanoporeNanostripperDehosting} from './workflows/nanopore_dehosting.nf'
+include {nanoporeMinimap2Dehosting} from './workflows/nanopore_dehosting.nf'
 
 
-if ( !params.directory ) {
-    println('Please supply a directory containing fastq files with directory.')
-    System.exit(1)
-}
-
-
-// Checking everything is found
+// Checking that everything is found before starting process
 if ( params.illumina ) {
     if ( !params.directory ) {
-        println("Please specify a directory containing single-end or paired fastq files with --directory <path/to/fastqs>")
+        println("Please specify a directory containing paired fastq reads with --directory <path/to/fastqs>")
         System.exit(1)
     }
 } else if ( params.nanopore ) {
-    if ( !params.directory ) {
-        println("Please specify a directory containing fast5 files with --directory <path/to/fast5s>")
+    // Only one process for nanopore data, validate its inputs
+    if ( !params.nanostripper && !params.minimap2 ) {
+        println("Please specify the tool to dehost nanopore data")
         System.exit(1)
+    } else if ( params.nanostripper && params.minimap2 ) {
+        println("Please specify one of `--nanostripper` or `--minimap2`")
+        System.exit(1)
+    } else if ( params.nanostripper ) {
+        if ( !params.directory ) {
+            println("Please specify a directory containing fast5 files with --directory <path/to/fast5s>")
+            System.exit(1)
+        }
+    } else {
+        if ( !params.directory ) {
+            println("Please specify a directory containing fastq files with --directory <path/to/fast5s>")
+            System.exit(1)
+        }
     }
 
     if ( !params.run_name) {
@@ -65,40 +74,57 @@ workflow {
         }
     
     } else if ( params.nanopore ) {
-        // First check if barcoded
-        barcodedFast5 = file("${params.directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
-        nonBarcodedFast5 = file("${params.directory}/*.fast5", type: 'file', maxDepth: 1)
+        // Nanostripper with Fast5s input
+        if ( params.nanostripper ) {
+            // First check if barcoded
+            barcodedFast5 = file("${params.directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
+            nonBarcodedFast5 = file("${params.directory}/*.fast5", type: 'file', maxDepth: 1)
 
-        // Use barcode to parallelize running if there are any
-        // Doesn't like softlinked directories, checks that we have files
-        // If not done, errors on blank barcoded directories
-        if ( barcodedFast5 ) {
-            Channel.fromPath( barcodedFast5 )
-                .filter{ d ->
-                            def count = 0
-                            for (x in d.listFiles()) {
-                                if (x.isFile()) {
-                                    count += 1
+            // Use barcode to parallelize running if there are any
+            // Doesn't like softlinked directories, checks that we have files
+            // If not done, errors on blank barcoded directories
+            if ( barcodedFast5 ) {
+                Channel.fromPath( barcodedFast5 )
+                    .filter{ d ->
+                                def count = 0
+                                for (x in d.listFiles()) {
+                                    if (x.isFile()) {
+                                        count += 1
+                                    }
                                 }
-                            }
-                            count > 0
-                }.set{ ch_fast5 }
+                                count > 0
+                    }.set{ ch_fast5 }
 
-            nanoporeDehosting(ch_fast5, ch_HumanReference, ch_CovidReference)
+                nanoporeNanostripperDehosting(ch_fast5, ch_HumanReference, ch_CovidReference)
 
-        } else if ( nonBarcodedFast5 ) {
-            Channel.fromPath( "${params.directory}", type: 'dir', maxDepth: 1 )
-                        .set{ ch_fast5 }
-            System.exit(1)
+            } else if ( nonBarcodedFast5 ) {
+                System.exit(1)
 
+            } else {
+                System.exit(1)
+            }
+        // Minimap2 with Fastqs input
         } else {
-            System.exit(1)
-
+            // First check if barcoded or not, need to 
+            barcodedFastq = file("${params.directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
+            nonBarcodedFastq = file("${params.directory}/*.fastq", type: 'file', maxDepth: 1)
+            if ( barcodedFastq ) {
+                Channel.fromPath( barcodedFastq )
+                    .filter{ d ->
+                                def count = 0
+                                for (x in d.listFiles()) {
+                                    if (x.isFile()) {
+                                        count += 1
+                                    }
+                                }
+                                count > 0
+                    }.set{ ch_fastq }
+            
+            } else if ( nonBarcodedFastq ) {
+                Channel.fromPath( nonBarcodedFastq )
+                    .set{ ch_fastq }
+            }
+            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference)
         }
-
-    } else {
-        println('Please specify either --illumina or --nanopore for the type of data that will be dehosted')
-        System.exit(1)
     }
-
 }
