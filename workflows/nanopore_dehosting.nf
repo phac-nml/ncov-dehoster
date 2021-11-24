@@ -97,6 +97,7 @@ workflow nanoporeMinimap2Dehosting {
       ch_fastq
       ch_HumanReference
       ch_CovidReference
+      directoryIn
     
     main:
 
@@ -119,4 +120,10 @@ workflow nanoporeMinimap2Dehosting {
     removeHumanReads(compositeMapping.out)
 
     generateFastqFiles(removeHumanReads.out)
+
+    if ( directoryIn ) {
+      if ( params.fast5_directory ) {
+        println('Directory passed correctly')
+      }
+    }
 }

@@ -19,25 +19,28 @@ if ( params.illumina ) {
         System.exit(1)
     }
 } else if ( params.nanopore ) {
-    // Only one process for nanopore data, validate its inputs
+    // Pick a pipeline and validate inputs for it
     if ( !params.nanostripper && !params.minimap2 ) {
         println("Please specify the tool to dehost nanopore data")
         System.exit(1)
     } else if ( params.nanostripper && params.minimap2 ) {
         println("Please specify one of `--nanostripper` or `--minimap2`")
         System.exit(1)
+    // Nanostripper Validation
     } else if ( params.nanostripper ) {
-        if ( !params.directory ) {
-            println("Please specify a directory containing fast5 files with --directory <path/to/fast5s>")
+        if ( !params.fast5_directory ) {
+            println("Please specify a directory containing barcoded fast5 files with --fast5_directory <path/to/BARCODES/>")
             System.exit(1)
         }
+    // Minimap2 Validation
     } else {
-        if ( !params.directory ) {
-            println("Please specify a directory containing fastq files with --directory <path/to/fast5s>")
+        if ( !params.fastq_directory ) {
+            println("Please specify a directory containing fastq files or barcoded fastq directories with --fastq_directory <path/to/fastqs>")
             System.exit(1)
         }
     }
 
+    // Run name for sorting out nanopore outputs in default output directory
     if ( !params.run_name) {
         println("Please specify a run name for seperating out nanopore runs")
         System.exit(1)
@@ -58,7 +61,7 @@ workflow {
 
     if ( params.illumina ) {
         
-        // Single-end or paired-end run
+        // Single-end or paired-end run - We don't support single end Illumina at this time
         if ( params.single_end ){
             Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
                         .set{ ch_fastqs }
@@ -77,8 +80,8 @@ workflow {
         // Nanostripper with Fast5s input
         if ( params.nanostripper ) {
             // First check if barcoded
-            barcodedFast5 = file("${params.directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
-            nonBarcodedFast5 = file("${params.directory}/*.fast5", type: 'file', maxDepth: 1)
+            barcodedFast5 = file("${params.fast5_directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
+            nonBarcodedFast5 = file("${params.fast5_directory}/*.fast5", type: 'file', maxDepth: 1)
 
             // Use barcode to parallelize running if there are any
             // Doesn't like softlinked directories, checks that we have files
@@ -103,11 +106,12 @@ workflow {
             } else {
                 System.exit(1)
             }
+
         // Minimap2 with Fastqs input
         } else {
             // First check if barcoded or not, need to 
-            barcodedFastq = file("${params.directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
-            nonBarcodedFastq = file("${params.directory}/*.fastq", type: 'file', maxDepth: 1)
+            barcodedFastq = file("${params.fastq_directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
+            nonBarcodedFastq = file("${params.fastq_directory}/*.fastq", type: 'file', maxDepth: 1)
             if ( barcodedFastq ) {
                 Channel.fromPath( barcodedFastq )
                     .filter{ d ->
@@ -119,12 +123,14 @@ workflow {
                                 }
                                 count > 0
                     }.set{ ch_fastq }
+                directoryIn = true
             
             } else if ( nonBarcodedFastq ) {
                 Channel.fromPath( nonBarcodedFastq )
                     .set{ ch_fastq }
+                directoryIn = false
             }
-            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference)
+            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference, directoryIn)
         }
     }
 }
