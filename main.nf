@@ -123,14 +123,12 @@ workflow {
                                 }
                                 count > 0
                     }.set{ ch_fastq }
-                directoryIn = true
             
             } else if ( nonBarcodedFastq ) {
                 Channel.fromPath( nonBarcodedFastq )
                     .set{ ch_fastq }
-                directoryIn = false
             }
-            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference, directoryIn)
+            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference)
         }
     }
 }

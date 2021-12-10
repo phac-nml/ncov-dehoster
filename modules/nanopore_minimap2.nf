@@ -92,7 +92,7 @@ process generateFastqFiles {
     tuple val(sampleName), path(dehosted_bam)
 
     output:
-    file("${sampleName}.host_removed.fastq")
+    tuple val(sampleName), file("${sampleName}.host_removed.fastq")
 
     script:
     """
@@ -100,9 +100,22 @@ process generateFastqFiles {
     """
 }
 
-// process regenerateDehostedFast5s {
+process regenerateDehostedFast5s {
+    publishDir "${params.outdir}/", pattern: "fast5_pass/${sampleName}", mode: "copy"
 
-// }
+    input:
+    tuple val(sampleName), path(dehosted_fastq_file), path(fast5_in)
+
+    output:
+    path "fast5_pass/${sampleName}"
+
+    script:
+    """
+    mkdir -p $sampleName
+    mv $dehosted_fastq_file $sampleName/
+    bash fast5-dehost-regenerate.sh $sampleName/ $sampleName $fast5_in
+    """
+}
 
 // process regenerateDehostedSequencingSummary {
 

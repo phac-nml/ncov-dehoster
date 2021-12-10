@@ -3,28 +3,33 @@
 // Enable dsl2
 nextflow.enable.dsl = 2
 
-// Import modules
+// Import modules //
 // From nanostripper pipeline
-include {nanostripper} from '../modules/nanopore_nanostripper.nf' 
-include {guppyBasecallerGPU} from '../modules/nanopore_nanostripper.nf'
-include {guppyBasecallerCPU} from '../modules/nanopore_nanostripper.nf'
-include {combineFastq} from '../modules/nanopore_nanostripper.nf'
-include {fastqSizeSelection} from '../modules/nanopore_nanostripper.nf'
-include {fastqDemultiplex} from '../modules/nanopore_nanostripper.nf'
-include {combineFast5Barcodes} from '../modules/nanopore_nanostripper.nf'
-include {regenerateFast5s} from '../modules/nanopore_nanostripper.nf'
-include {generateSimpleSequencingSummary} from '../modules/nanopore_nanostripper.nf'
-include {combineCSVs} from '../modules/nanopore_nanostripper.nf'
+include {
+  nanostripper;
+  guppyBasecallerGPU;
+  guppyBasecallerCPU;
+  combineFastq;
+  fastqSizeSelection;
+  fastqDemultiplex;
+  combineFast5Barcodes;
+  regenerateFast5s;
+  generateSimpleSequencingSummary;
+  combineCSVs
+  } from '../modules/nanopore_nanostripper.nf'
 
 // From minimap2 pipeline
-include {generateMinimap2Index} from '../modules/nanopore_minimap2.nf'
-include {guppyplexSizeSelection} from '../modules/nanopore_minimap2.nf'
-include {compositeMapping} from '../modules/nanopore_minimap2.nf'
-include {removeHumanReads} from '../modules/nanopore_minimap2.nf'
-include {generateFastqFiles} from '../modules/nanopore_minimap2.nf'
+include {
+  generateMinimap2Index;
+  guppyplexSizeSelection;
+  compositeMapping;
+  removeHumanReads;
+  generateFastqFiles;
+  regenerateDehostedFast5s
+  } from '../modules/nanopore_minimap2.nf'
 
 
-// Workflow Nanostripper
+// Workflow Nanostripper //
 workflow nanoporeNanostripperDehosting {
     take:
       ch_fast5
@@ -91,13 +96,12 @@ workflow nanoporeNanostripperDehosting {
 
 }
 
-// Workflow Minimap2 fastq files
+// Workflow Minimap2 fastq files //
 workflow nanoporeMinimap2Dehosting {
   take:
       ch_fastq
       ch_HumanReference
       ch_CovidReference
-      directoryIn
     
     main:
 
@@ -121,9 +125,11 @@ workflow nanoporeMinimap2Dehosting {
 
     generateFastqFiles(removeHumanReads.out)
 
-    if ( directoryIn ) {
-      if ( params.fast5_directory ) {
-        println('Directory passed correctly')
-      }
+    if ( params.fast5_directory ) {
+      Channel.fromPath( "${params.fast5_directory}")
+                        .set{ ch_Fast5 }
+      regenerateDehostedFast5s(generateFastqFiles.out
+                                         .combine(ch_Fast5))
+      generateSimpleSequencingSummary(regenerateDehostedFast5s.out.collect())
     }
 }
