@@ -113,10 +113,6 @@ process regenerateDehostedFast5s {
     """
     mkdir -p $sampleName
     mv $dehosted_fastq_file $sampleName/
-    bash fast5-dehost-regenerate.sh $sampleName/ $sampleName $fast5_in
+    bash fast5-dehost-regenerate.sh $sampleName/ $sampleName $fast5_in ${params.nanopore_threads}
     """
 }
-
-// process regenerateDehostedSequencingSummary {
-
-// }

@@ -70,7 +70,6 @@ process mapToCompositeIndex {
     """
 }
 
-
 process dehostBamFiles {
 
     publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"

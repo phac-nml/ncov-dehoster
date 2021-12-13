@@ -1,4 +1,4 @@
-// Nanopore dehosting workflows
+/// Nanopore Dehosting Workflows
 
 // Enable dsl2
 nextflow.enable.dsl = 2
@@ -93,7 +93,6 @@ workflow nanoporeNanostripperDehosting {
       } else {
         println('WARNING: dehosted fast5 files cannot be basecalled without a specified guppy environment, dehosting fast5 files only and then exiting')
       }
-
 }
 
 // Workflow Minimap2 fastq files //
@@ -104,7 +103,6 @@ workflow nanoporeMinimap2Dehosting {
       ch_CovidReference
     
     main:
-
     // If given a reference utilize it, otherwise make it
     if ( params.composite_minimap2_index ) {
       Channel.fromPath( "${params.composite_minimap2_index}")
@@ -125,6 +123,8 @@ workflow nanoporeMinimap2Dehosting {
 
     generateFastqFiles(removeHumanReads.out)
 
+    // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
+    // This process is slow though without a lot of computational support behind it
     if ( params.fast5_directory ) {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
