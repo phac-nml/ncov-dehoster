@@ -1,7 +1,7 @@
 process generateMinimap2Index {
     publishDir "${params.outdir}/compositeMinimapIndex", pattern: "composite_ref.mmi", mode: "symlink"
 
-    label 'bwa_mem'
+    label 'indexResources'
 
     input:
     path(human_ref)
@@ -17,10 +17,9 @@ process generateMinimap2Index {
     """
 }
 
-process guppyplexSizeSelection {
-    publishDir "${params.outdir}/fastqSizeSelect", pattern: "*.fastq", mode: "copy"
-
-    label 'smallCPU'
+process fastqSizeSelection_MM2 {
+    label 'mediumMem'
+    tag { sampleName }
 
     input:
     path(fastq)
@@ -48,10 +47,9 @@ process guppyplexSizeSelection {
     }
 }
 
-process compositeMapping {
-    publishDir "${params.outdir}/compositeMapping", pattern: "*.sorted.bam", mode: "symlink"
-
-    label 'smallCPU'
+process compositeMappingMM2 {
+    label 'mediumMem'
+    tag { sampleName }
 
     input:
     tuple val(sampleName), path(singular_fastq), path(composite_ref)
@@ -66,9 +64,8 @@ process compositeMapping {
 }
 
 process removeHumanReads {
-    publishDir "${params.outdir}/host_removed", pattern: "*.sorted.bam", mode: "symlink"
-
     label 'smallCPU'
+    tag { sampleName }
 
     input:
     tuple val(sampleName), path(sorted_bam)
@@ -83,10 +80,11 @@ process removeHumanReads {
     """
 }
 
-process generateFastqFiles {
-    publishDir "${params.outdir}/final_fastq", pattern: "*.host_removed.fastq", mode: "copy"
+process regenerateFastqFiles {
+    publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}", pattern: "*.host_removed.fastq", mode: "copy"
 
     label 'smallCPU'
+    tag { sampleName }
 
     input:
     tuple val(sampleName), path(dehosted_bam)
@@ -100,8 +98,11 @@ process generateFastqFiles {
     """
 }
 
-process regenerateDehostedFast5s {
-    publishDir "${params.outdir}/", pattern: "fast5_pass/${sampleName}", mode: "copy"
+process regenerateFast5s_MM2 {
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${sampleName}", mode: "copy"
+
+    label 'regenerateFast5s'
+    tag { sampleName }
 
     input:
     tuple val(sampleName), path(dehosted_fastq_file), path(fast5_in)

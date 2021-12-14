@@ -14,6 +14,13 @@ FAST5_IN=$3
 THREADS=$4
 
 ### Run ###
+# Check input folder name and if it matches output, rename it
+BASENAME_FAST5_IN=$(basename $FAST5_IN)
+if [ "$BASENAME_FAST5_IN" = "fast5_pass" ]; then
+    mv $FAST5_IN fast5_in
+    FAST5_IN="fast5_in"
+fi
+
 # Get the fastq headers
 awk -F ' ' '(NR%4==1) {print $1}' ${DEHOSTED_BARCODE_FASTQ_FOLDER}/* | sed 's/@//g'  > ${BARCODE_NAME}.txt
 

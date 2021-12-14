@@ -32,6 +32,8 @@ process grabCompositeIndex {
 process indexCompositeReference {
     publishDir "${params.outdir}/humanBWAIndex", pattern: "*.fa*", mode: "symlink"
 
+    label 'indexResources'
+
     input:
     path(composite_ref)
 
@@ -44,7 +46,7 @@ process indexCompositeReference {
     """
 }
 
-process mapToCompositeIndex {
+process compositeMappingBWA {
     publishDir "${params.outdir}/compositeMAPs", pattern: "${sampleName}.*", mode: "copy"
 
     input:
@@ -65,7 +67,7 @@ process mapToCompositeIndex {
 process dehostBamFiles {
     publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"
 
-    label 'mediumCPU'
+    label 'smallCPU'
     tag { sampleName }
 
     input:
@@ -81,7 +83,7 @@ process dehostBamFiles {
 
     """
     samtools index ${composite_bam}
-    dehost.py --file ${composite_bam} \
+    dehost_illumina.py --file ${composite_bam} \
     --keep_id ${params.covid_ref_id} \
     -q ${params.keep_min_map_quality} \
     -Q ${params.remove_min_map_quality} \
@@ -93,7 +95,7 @@ process dehostBamFiles {
 process generateDehostedReads {
     publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}_dehosted_R*", mode: "copy"
 
-    label 'mediumCPU'
+    label 'mediumMem'
     tag { sampleName }
 
     input:

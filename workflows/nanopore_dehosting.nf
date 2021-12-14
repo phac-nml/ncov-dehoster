@@ -10,10 +10,10 @@ include {
   guppyBasecallerGPU;
   guppyBasecallerCPU;
   combineFastq;
-  fastqSizeSelection;
+  fastqSizeSelection_NS;
   fastqDemultiplex;
   combineFast5Barcodes;
-  regenerateFast5s;
+  regenerateFast5s_NS;
   generateSimpleSequencingSummary;
   combineCSVs
   } from '../modules/nanopore_nanostripper.nf'
@@ -21,11 +21,11 @@ include {
 // From minimap2 pipeline
 include {
   generateMinimap2Index;
-  guppyplexSizeSelection;
-  compositeMapping;
+  fastqSizeSelection_MM2;
+  compositeMappingMM2;
   removeHumanReads;
-  generateFastqFiles;
-  regenerateDehostedFast5s
+  regenerateFastqFiles;
+  regenerateFast5s_MM2
   } from '../modules/nanopore_minimap2.nf'
 
 
@@ -79,16 +79,16 @@ workflow nanoporeNanostripperDehosting {
         // Back to the same processes after basecalling
         combineFastq(ch_basecalled_fastqs)
 
-        fastqSizeSelection(combineFastq.out)
+        fastqSizeSelection_NS(combineFastq.out)
 
-        fastqDemultiplex(fastqSizeSelection.out)
+        fastqDemultiplex(fastqSizeSelection_NS.out)
 
-        regenerateFast5s(fastqDemultiplex.out.barcodes.flatten(),
+        regenerateFast5s_NS(fastqDemultiplex.out.barcodes.flatten(),
                           combineFast5Barcodes.out)
 
-        generateSimpleSequencingSummary(regenerateFast5s.out.fast5_pass.collect())
+        generateSimpleSequencingSummary(regenerateFast5s_NS.out.fast5_pass.collect())
 
-        combineCSVs(regenerateFast5s.out.csv.collect())
+        combineCSVs(regenerateFast5s_NS.out.csv.collect())
 
       } else {
         println('WARNING: dehosted fast5 files cannot be basecalled without a specified guppy environment, dehosting fast5 files only and then exiting')
@@ -114,22 +114,22 @@ workflow nanoporeMinimap2Dehosting {
                            .set{ ch_CompReference }
     }
     
-    guppyplexSizeSelection(ch_fastq)
+    fastqSizeSelection_MM2(ch_fastq)
     
-    compositeMapping(guppyplexSizeSelection.out
+    compositeMappingMM2(fastqSizeSelection_MM2.out
                                            .combine(ch_CompReference))
 
-    removeHumanReads(compositeMapping.out)
+    removeHumanReads(compositeMappingMM2.out)
 
-    generateFastqFiles(removeHumanReads.out)
+    regenerateFastqFiles(removeHumanReads.out)
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
     // This process is slow though without a lot of computational support behind it
     if ( params.fast5_directory ) {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
-      regenerateDehostedFast5s(generateFastqFiles.out
+      regenerateFast5s_MM2(regenerateFastqFiles.out
                                          .combine(ch_Fast5))
-      generateSimpleSequencingSummary(regenerateDehostedFast5s.out.collect())
+      generateSimpleSequencingSummary(regenerateFast5s_MM2.out.collect())
     }
 }

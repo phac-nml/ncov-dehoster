@@ -63,8 +63,8 @@ process combineFastq {
     """
 }
 
-process fastqSizeSelection {
-    label 'largeMem'
+process fastqSizeSelection_NS {
+    label 'mediumMem'
 
     input:
     file(combined_fastq)
@@ -117,9 +117,10 @@ process combineFast5Barcodes {
     """
 }
 
-process regenerateFast5s {
+process regenerateFast5s_NS {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${barcodeName}", mode: "copy"
 
+    label 'regenerateFast5s'
     tag { barcodeName }
 
     input:
