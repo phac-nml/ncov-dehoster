@@ -1,8 +1,5 @@
 process nanostripper {
-
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
-
-    label 'nanostripper'
 
     tag { barcodeName }
 
@@ -26,9 +23,6 @@ process nanostripper {
 }
 
 process guppyBasecallerGPU {
-
-    label 'guppyGPU'
-
     input:
     path(dehosted_fast5s)
 
@@ -42,9 +36,6 @@ process guppyBasecallerGPU {
 }
 
 process guppyBasecallerCPU {
-
-    label 'guppyCPU'
-
     input:
     path(dehosted_fast5_barcode)
 
@@ -58,7 +49,6 @@ process guppyBasecallerCPU {
 }
 
 process combineFastq {
-
     label 'largeMem'
 
     input:
@@ -74,7 +64,6 @@ process combineFastq {
 }
 
 process fastqSizeSelection {
-
     label 'largeMem'
 
     input:
@@ -92,10 +81,9 @@ process fastqSizeSelection {
 }
 
 process fastqDemultiplex {
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fastq_pass", mode: "copy"
 
     label 'largeMem'
-
-    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fastq_pass", mode: "copy"
 
     input:
     file(dehosted_combined_fastq)
@@ -111,10 +99,9 @@ process fastqDemultiplex {
 }
 
 process combineFast5Barcodes {
-
     // Done to make a single directory of the fast5 dehosted only files for regenerateFast5 process
 
-    label 'smallmem'
+    label 'smallCPU'
 
     input:
     path(dehosted_fast5s)
@@ -131,8 +118,9 @@ process combineFast5Barcodes {
 }
 
 process regenerateFast5s {
-
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${barcodeName}", mode: "copy"
+
+    tag { barcodeName }
 
     input:
     path(dehosted_fastq_barcode)
@@ -156,8 +144,9 @@ process regenerateFast5s {
 }
 
 process generateSimpleSequencingSummary {
-
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "sequencing_summary.txt", mode: "copy"
+
+    label 'smallCPU'
 
     input:
     path(fast5_barcode)
@@ -172,10 +161,9 @@ process generateSimpleSequencingSummary {
 }
 
 process combineCSVs {
-
     publishDir "${params.outdir}/${params.run_name}", pattern: "removal_summary.csv", mode: "copy"
 
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(csvs)

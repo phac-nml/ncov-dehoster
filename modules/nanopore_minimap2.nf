@@ -20,7 +20,7 @@ process generateMinimap2Index {
 process guppyplexSizeSelection {
     publishDir "${params.outdir}/fastqSizeSelect", pattern: "*.fastq", mode: "copy"
 
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(fastq)
@@ -51,7 +51,7 @@ process guppyplexSizeSelection {
 process compositeMapping {
     publishDir "${params.outdir}/compositeMapping", pattern: "*.sorted.bam", mode: "symlink"
 
-    label 'smallMem'
+    label 'smallCPU'
 
     input:
     tuple val(sampleName), path(singular_fastq), path(composite_ref)
@@ -68,7 +68,7 @@ process compositeMapping {
 process removeHumanReads {
     publishDir "${params.outdir}/host_removed", pattern: "*.sorted.bam", mode: "symlink"
 
-    label 'smallMem'
+    label 'smallCPU'
 
     input:
     tuple val(sampleName), path(sorted_bam)
@@ -86,7 +86,7 @@ process removeHumanReads {
 process generateFastqFiles {
     publishDir "${params.outdir}/final_fastq", pattern: "*.host_removed.fastq", mode: "copy"
 
-    label 'smallMem'
+    label 'smallCPU'
 
     input:
     tuple val(sampleName), path(dehosted_bam)

@@ -1,6 +1,5 @@
 process generateCompositeReference {
-
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(human_ref)
@@ -15,10 +14,8 @@ process generateCompositeReference {
     """
 }
 
-
 process grabCompositeIndex {
-
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(index_folder)
@@ -35,8 +32,6 @@ process grabCompositeIndex {
 process indexCompositeReference {
     publishDir "${params.outdir}/humanBWAIndex", pattern: "*.fa*", mode: "symlink"
 
-    label 'bwa_composite_index'
-
     input:
     path(composite_ref)
 
@@ -50,10 +45,7 @@ process indexCompositeReference {
 }
 
 process mapToCompositeIndex {
-
     publishDir "${params.outdir}/compositeMAPs", pattern: "${sampleName}.*", mode: "copy"
-
-    label 'bwa_mem'
 
     input:
     tuple(sampleName, path(forward), path(reverse), path(composite_reference))
@@ -71,10 +63,10 @@ process mapToCompositeIndex {
 }
 
 process dehostBamFiles {
-
     publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"
 
-    label 'mediumcpu'
+    label 'mediumCPU'
+    tag { sampleName }
 
     input:
     tuple(sampleName, path(composite_bam))
@@ -99,10 +91,10 @@ process dehostBamFiles {
 }
 
 process generateDehostedReads {
-
     publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}_dehosted_R*", mode: "copy"
 
-    label 'mediumcpu'
+    label 'mediumCPU'
+    tag { sampleName }
 
     input:
     tuple(sampleName, path(dehosted_bam))
@@ -117,10 +109,9 @@ process generateDehostedReads {
 }
 
 process combineCSVs {
-
     publishDir "${params.outdir}", pattern: "removal_summary.csv", mode: "copy"
 
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(csvs)
