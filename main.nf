@@ -4,13 +4,18 @@
 nextflow.enable.dsl = 2
 
 // Modules
-// None at the moment, add some here if need to pre-process reads (like find no inputs etc)
+include {helpStatement} from './modules/help.nf'
 
 // subworkflows
 include {illuminaDehosting} from './workflows/illumina_dehosting.nf'
 include {nanoporeNanostripperDehosting} from './workflows/nanopore_dehosting.nf'
 include {nanoporeMinimap2Dehosting} from './workflows/nanopore_dehosting.nf'
 
+// Print Help
+if ( params.help ){
+    helpStatement()
+    exit 0
+}
 
 // Checking that everything is found before starting process
 if ( params.illumina ) {
