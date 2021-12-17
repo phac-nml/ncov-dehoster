@@ -71,12 +71,16 @@ process removeHumanReads {
     tuple val(sampleName), path(sorted_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam")
+    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam"), emit: bam
+    path "${sampleName}*.csv", emit: csv
 
     script:
+
+    def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
+
     """
     samtools index $sorted_bam
-    dehost_nanopore.py --file $sorted_bam --output ${sampleName}.host_removed.sorted.bam
+    dehost_nanopore.py --file $sorted_bam --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
     """
 }
 

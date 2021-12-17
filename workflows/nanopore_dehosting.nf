@@ -121,10 +121,10 @@ workflow nanoporeMinimap2Dehosting {
 
     removeHumanReads(compositeMappingMM2.out)
 
-    regenerateFastqFiles(removeHumanReads.out)
+    regenerateFastqFiles(removeHumanReads.out.bam)
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
-    // This process is slow though without a lot of computational support behind it
+    // This process is slow without a lot of computational support behind it however so its optional
     if ( params.fast5_directory ) {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
@@ -132,4 +132,7 @@ workflow nanoporeMinimap2Dehosting {
                                          .combine(ch_Fast5))
       generateSimpleSequencingSummary(regenerateFast5s_MM2.out.collect())
     }
+
+    // Finally make CSV output
+    combineCSVs(removeHumanReads.out.csv.collect())
 }
