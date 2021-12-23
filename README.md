@@ -5,15 +5,15 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore
 
 **Illumina** - Competitive mapping approach with bwa mem to remove human reads from the input fastq files while maintaining as many viral reads as possible
 
-**Nanopore Minimap2** - Competitive mapping approach based around removing human reads from either input fastq files or barcoded directories while maintaining as many viral reads as possible. Optional fast5 dehosting available in this pipeline
+**Nanopore Minimap2** - Competitive mapping approach based around removing human reads from either input fastq files or barcoded directories while maintaining as many viral reads as possible. Optional fast5 dehosting available in this pipeline as an additional argument
 
 **Nanopore Nanostripper** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and then subsequently [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate de-hosted, demultiplexed fast5 and fastq files from input fast5 files. 
 
-*Currently* the nanopore nanostripper dehosting pipeline is still rough to run and probably will be for a while. You will have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run:
-`--guppyGPU <path/to/guppyGPU/env>`
-`--guppyCPU <path/to/guppyCPU/env>`
-`--nanostripper_env_path <path/to/nanostripper/env`
-`--nanostripper_tool_path <path/to/nanostripper/tool`
+- *Currently* the nanopore nanostripper dehosting pipeline is still rough to run and probably will be for a while. For a full 96 sample run it takes 6+ hours to complete. You will also have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run:
+    - `--guppyGPU <path/to/guppyGPU/env>`
+    - `--guppyCPU <path/to/guppyCPU/env>`
+    - `--nanostripper_env_path <path/to/nanostripper/env`
+    - `--nanostripper_tool_path <path/to/nanostripper/tool`
 
 ------
 
@@ -245,7 +245,7 @@ Full instructions on how to easily install and run the Nanopore Minimap2 fastq d
         - A directory with barcoded directories containing fastq files
         - A directory with fastq files
 
-2. (OPTIONAL) Strictly demultiplex the data (if using barcoded directories as input)
+2. (OPTIONAL) Strictly demultiplex the data (if using barcoded directories as input) before running the pipeline
 
     - Demultiplex the data using [guppy_barcoder](https://community.nanoporetech.com) (proprietary from ONT) and the `--require_barcodes_both_ends` flag to make sure that barcodes are present on each end of the reads.
         - There are some spots in the genome where this helps in resolution when analyzing the data
@@ -358,7 +358,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
     - Tools:
         - samtools fastq
 
-6. (OPTIONAL) Regenerate fast5 files and the sequencing summary file
+6. (OPTIONAL) Regenerate fast5 files and the sequencing summary file if `--fast5_directory` argument is given
 
     Regenerate dehosted fast5 files from the fastq files using fast5_subset
 
@@ -376,7 +376,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
 
 #### **Additional Info**
 
-- Providing the composite minimap2 index will speed up the run but not significantly
+- Providing the composite minimap2 index genereated in a previous analysis will speed other ones
 
 - Inputs can be fastq barcode directories or a directory of fastq files
     - Example barcode directory:

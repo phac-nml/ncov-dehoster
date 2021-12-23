@@ -4,7 +4,7 @@ def helpStatement() {
         nextflow run phac-nml/ncov-dehoster --human_ref [Path/to/Fasta] ( --illumina | --nanopore ( --nanostripper | --minimap2 )) [workflow-options]
 
     Overall Mandatory Arguments:
-        --human_ref [file]              Path to human reference genome (ex. hg38.fasta)
+        --human_ref [file]              Path to human reference genome (ex. hg38.fa)
 
     Overall Optional Arguments:
         --cache [path]                  Path to cache directory containing conda environments
