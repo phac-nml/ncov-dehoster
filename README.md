@@ -134,9 +134,9 @@ Full instructions on how to easily install and run the Illumina dehosting pipeli
 
 Found in `./results/` directory, the outputs for the Illumina pipeline include:
 
-- compositeMAPs --> Folder containing the composite mapping sorted bam files along with each samples flagstats output
+- compositeMAPs --> Folder containing the composite mapping sorted BAM files along with each samples flagstats output
 
-- dehostedBAMs --> Folder containing the de-hosted composite bam files
+- dehostedBAMs --> Folder containing the de-hosted composite BAM files
 
 - dehosted_paired_fastqs --> Folder containing the final de-hosted, paired fastq reads (main and final output)
 
@@ -167,7 +167,7 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
         - Paired fastq reads
 
     - Outputs:
-        - Sorted bam file
+        - Sorted BAM file
         - flagstats output
 
     - Tools:
@@ -179,10 +179,10 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
     Use the viral reference contig name (default MN908947.3) to determine which reads mapped to the human reference with >= the mapping quality score (default 0). Then pull out only proper pairs matching the viral reference and make sure they are above the quality wanted (default 60).
 
     - Inputs:
-        - Sorted bam file
+        - Sorted BAM file
 
     - Outputs:
-        - Dehosted bam file
+        - Dehosted BAM file
 
     - Tools:
         - dehost_illumina.py
@@ -193,7 +193,7 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
     Regenerate paired fastq files with samtools fastq
 
     - Inputs:
-        - Dehosted bam file
+        - Dehosted BAM file
 
     - Outputs:
         - Dehosted, paired fastq reads files
@@ -335,10 +335,10 @@ The output structure is setup as such so that the `run_name` organizes the seque
     Use the viral reference contig name (default MN908947.3) to determine which reads mapped to the human reference with >= the mapping quality score (default 0). Then pull out only reads mapping to the viral reference and make sure they are above the quality wanted (default 60).
 
     - Inputs:
-        - Sorted bam file
+        - Sorted BAM file
 
     - Outputs:
-        - Dehosted bam file
+        - Dehosted BAM file
         - Sample specific removal CSV
 
     - Tools:
@@ -350,7 +350,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
     Regenerate paired fastq files with samtools fastq
 
     - Inputs:
-        - Dehosted bam file
+        - Dehosted BAM file
 
     - Outputs:
         - Dehosted fastq file
@@ -400,6 +400,15 @@ The output structure is setup as such so that the `run_name` organizes the seque
         ├── GHI.fastq
         ├── JKL.fastq
         etc.
+        ```
+- Host removal status can be checked with Kraken2 with a command like the following for each sample:
+    ```
+    kraken2 --confidence 0.1 --db PATH/TO/kraken2_covid19_human_db/ --threads <THREADS> --report <SAMPLE>-REPORT.tsv --output <SAMPLE>-kraken.tsv <FASTQ_FILE_IN>
+    ```
+
+    - And then checking the total human reads with:
+        ```
+        grep -P "\s+9606\s+" -H *-kraken.tsv > human.tsv | wc -l human.tsv
         ```
 
 ------
