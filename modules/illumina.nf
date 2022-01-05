@@ -1,6 +1,5 @@
 process generateCompositeReference {
-
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(human_ref)
@@ -15,10 +14,8 @@ process generateCompositeReference {
     """
 }
 
-
 process grabCompositeIndex {
-
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(index_folder)
@@ -35,7 +32,7 @@ process grabCompositeIndex {
 process indexCompositeReference {
     publishDir "${params.outdir}/humanBWAIndex", pattern: "*.fa*", mode: "symlink"
 
-    label 'bwa_composite_index'
+    label 'indexResources'
 
     input:
     path(composite_ref)
@@ -49,18 +46,15 @@ process indexCompositeReference {
     """
 }
 
-process mapToCompositeIndex {
-
+process compositeMappingBWA {
     publishDir "${params.outdir}/compositeMAPs", pattern: "${sampleName}.*", mode: "copy"
 
-    label 'bwa_mem'
-
     input:
-    tuple(sampleName, path(forward), path(reverse), path(composite_reference))
+    tuple( val(sampleName), path(forward), path(reverse), path(composite_reference))
     path(indexed_reference)
 
     output:
-    tuple sampleName, path("${sampleName}.sorted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.sorted.bam"), emit: bam
     path("${sampleName}.flagstats.txt")
 
     script:
@@ -70,18 +64,17 @@ process mapToCompositeIndex {
     """
 }
 
-
 process dehostBamFiles {
-
     publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"
 
-    label 'mediumcpu'
+    label 'smallCPU'
+    tag { sampleName }
 
     input:
-    tuple(sampleName, path(composite_bam))
+    tuple( val(sampleName), path(composite_bam))
 
     output:
-    tuple sampleName, path("${sampleName}.dehosted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.dehosted.bam"), emit: bam
     path "${sampleName}*.csv", emit: csv
 
     script:
@@ -90,7 +83,7 @@ process dehostBamFiles {
 
     """
     samtools index ${composite_bam}
-    dehost.py --file ${composite_bam} \
+    dehost_illumina.py --file ${composite_bam} \
     --keep_id ${params.covid_ref_id} \
     -q ${params.keep_min_map_quality} \
     -Q ${params.remove_min_map_quality} \
@@ -100,13 +93,13 @@ process dehostBamFiles {
 }
 
 process generateDehostedReads {
-
     publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "${sampleName}_dehosted_R*", mode: "copy"
 
-    label 'mediumcpu'
+    label 'mediumMem'
+    tag { sampleName }
 
     input:
-    tuple(sampleName, path(dehosted_bam))
+    tuple( val(sampleName), path(dehosted_bam))
 
     output:
     path("${sampleName}_dehosted_R*")
@@ -118,10 +111,9 @@ process generateDehostedReads {
 }
 
 process combineCSVs {
-
     publishDir "${params.outdir}", pattern: "removal_summary.csv", mode: "copy"
 
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(csvs)

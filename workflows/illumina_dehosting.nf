@@ -1,16 +1,18 @@
 // Illumina dehosting workflow
 
 // Enable dsl2
-nextflow.preview.dsl = 2
+nextflow.enable.dsl = 2
 
 // Import modules
-include {generateCompositeReference} from '../modules/illumina.nf'
-include {grabCompositeIndex} from '../modules/illumina.nf'
-include {indexCompositeReference} from '../modules/illumina.nf'
-include {mapToCompositeIndex} from '../modules/illumina.nf'
-include {dehostBamFiles} from '../modules/illumina.nf'
-include {generateDehostedReads} from '../modules/illumina.nf'
-include {combineCSVs} from '../modules/illumina.nf'
+include {
+  generateCompositeReference;
+  grabCompositeIndex;
+  indexCompositeReference;
+  compositeMappingBWA;
+  dehostBamFiles;
+  generateDehostedReads;
+  combineCSVs
+  } from '../modules/illumina.nf'
 
 // Workflow
 workflow illuminaDehosting {
@@ -36,11 +38,11 @@ workflow illuminaDehosting {
               .set{ ch_index }
     }
 
-    mapToCompositeIndex(ch_fastqs
+    compositeMappingBWA(ch_fastqs
                         .combine(generateCompositeReference.out),
                       ch_index)
 
-    dehostBamFiles(mapToCompositeIndex.out.bam)
+    dehostBamFiles(compositeMappingBWA.out.bam)
 
     generateDehostedReads(dehostBamFiles.out.bam)
 

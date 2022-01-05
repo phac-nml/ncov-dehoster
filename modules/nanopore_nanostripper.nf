@@ -1,8 +1,5 @@
 process nanostripper {
-
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
-
-    label 'nanostripper'
 
     tag { barcodeName }
 
@@ -26,9 +23,6 @@ process nanostripper {
 }
 
 process guppyBasecallerGPU {
-
-    label 'guppyGPU'
-
     input:
     path(dehosted_fast5s)
 
@@ -42,9 +36,6 @@ process guppyBasecallerGPU {
 }
 
 process guppyBasecallerCPU {
-
-    label 'guppyCPU'
-
     input:
     path(dehosted_fast5_barcode)
 
@@ -58,7 +49,6 @@ process guppyBasecallerCPU {
 }
 
 process combineFastq {
-
     label 'largeMem'
 
     input:
@@ -73,9 +63,8 @@ process combineFastq {
     """
 }
 
-process fastqSizeSelection {
-
-    label 'largeMem'
+process fastqSizeSelection_NS {
+    label 'mediumMem'
 
     input:
     file(combined_fastq)
@@ -92,10 +81,9 @@ process fastqSizeSelection {
 }
 
 process fastqDemultiplex {
+    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fastq_pass", mode: "copy"
 
     label 'largeMem'
-
-    publishDir "${params.outdir}/${params.run_name}/run", pattern: "fastq_pass", mode: "copy"
 
     input:
     file(dehosted_combined_fastq)
@@ -111,10 +99,9 @@ process fastqDemultiplex {
 }
 
 process combineFast5Barcodes {
-
     // Done to make a single directory of the fast5 dehosted only files for regenerateFast5 process
 
-    label 'smallmem'
+    label 'smallCPU'
 
     input:
     path(dehosted_fast5s)
@@ -130,9 +117,11 @@ process combineFast5Barcodes {
     """
 }
 
-process regenerateFast5s {
-
+process regenerateFast5s_NS {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${barcodeName}", mode: "copy"
+
+    label 'regenerateFast5s'
+    tag { barcodeName }
 
     input:
     path(dehosted_fastq_barcode)
@@ -149,15 +138,16 @@ process regenerateFast5s {
     def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
 
     """
-    bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted
+    bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted ${params.nanopore_threads}
 
     bash generate-csv.sh ${barcodeName} ${fast5_dehosted}/${barcodeName}/nanostripper_summary.txt fast5_pass/${barcodeName}/filename_mapping.txt ${rev}
     """
 }
 
 process generateSimpleSequencingSummary {
-
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "sequencing_summary.txt", mode: "copy"
+
+    label 'smallCPU'
 
     input:
     path(fast5_barcode)
@@ -172,10 +162,9 @@ process generateSimpleSequencingSummary {
 }
 
 process combineCSVs {
-
     publishDir "${params.outdir}/${params.run_name}", pattern: "removal_summary.csv", mode: "copy"
 
-    label 'smallcpu'
+    label 'smallCPU'
 
     input:
     path(csvs)
