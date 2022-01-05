@@ -401,7 +401,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
         ├── JKL.fastq
         etc.
         ```
-- Host removal status can be checked with Kraken2 with a command like the following for each sample:
+- Host removal status can be checked with Kraken2 using a command similar to the following one each sample in the run:
     ```
     kraken2 --confidence 0.1 --db PATH/TO/kraken2_covid19_human_db/ --threads <THREADS> --report <SAMPLE>-REPORT.tsv --output <SAMPLE>-kraken.tsv <FASTQ_FILE_IN>
     ```
