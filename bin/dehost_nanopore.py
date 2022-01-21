@@ -97,7 +97,7 @@ def main():
     line = {    'sample' : sample_name,
                 'human_reads_filtered' : h_count, 
                 'poor_quality_reads_filtered' : p_count,
-                'paired_reads_kept' : len(keep_read_list),
+                'reads_kept' : len(keep_read_list),
                 'percentage_kept' : "{:.2f}".format(percentage_kept),
                 'github_commit' : args.revision
             }
