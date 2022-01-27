@@ -129,6 +129,7 @@ workflow nanoporeMinimap2Dehosting {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
       regenerateFast5s_MM2(regenerateFastqFiles.out
+                                         .filter{ it[1].countFastq() > 5}
                                          .combine(ch_Fast5))
       generateSimpleSequencingSummary(regenerateFast5s_MM2.out.collect())
     }
