@@ -5,11 +5,11 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore
 
 **Illumina** - Competitive mapping approach with bwa mem to remove human reads from the input fastq files while maintaining as many viral reads as possible
 
-**Nanopore Minimap2** - Competitive mapping approach based around removing human reads from either input fastq files or barcoded directories while maintaining as many viral reads as possible. Optional fast5 dehosting available in this pipeline as an additional argument
+**Nanopore Minimap2** - Competitive mapping approach based around removing human reads from either input fastq files or barcoded directories while maintaining as many viral reads as possible. Strict demultiplexing is recommended before running. There is optional fast5 dehosting available in this pipeline as an additional argument.
 
-**Nanopore Nanostripper** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and then subsequently [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate de-hosted, demultiplexed fast5 and fastq files from input fast5 files. 
+**Nanopore Nanostripper** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and then subsequently [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate dehosted, demultiplexed fast5 and fastq files from input fast5 files. 
 
-- *Currently* the nanopore nanostripper dehosting pipeline is still rough to run and probably will be for a while. For a full 96 sample run it takes 6+ hours to complete. You will also have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run:
+- *Currently* the nanopore nanostripper dehosting pipeline is rough to run and probably will be for a while. For a full 96 sample run it takes 6+ hours to complete. You will also have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run:
     - `--guppyGPU <path/to/guppyGPU/env>`
     - `--guppyCPU <path/to/guppyCPU/env>`
     - `--nanostripper_env_path <path/to/nanostripper/env`
@@ -59,7 +59,7 @@ Run the basic **Minimap2 Fastq** pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq_directory <path/to/fastqs> --human_ref <path/to/reference> --run_name 'whatever_you_want'
 ```
 
-Minimum computational specs required for the minimap2 nanopore fastq host removal pipeline are 3+ cpu and 16+G memory
+Minimum computational specs required for the minimap2 nanopore fastq host removal pipeline are 2+ cpu and 12+G memory
 
 #### Nanostripper Fast5 Pipeline
 
@@ -71,7 +71,7 @@ Run the full **Nanopore Nanostripper** pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --nanostripper --fast5_directory <path/to/fast5_pass/> --human_ref <path/to/reference> --run_name 'whatever_you_want' --guppyCPU </path/to/conda_env/guppy-4.0.11-cpu/>
 ```
 
-You can also just generate de-hosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
+You can also just generate dehosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
 
 Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory
 
@@ -136,9 +136,9 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
 
 - compositeMAPs --> Folder containing the composite mapping sorted BAM files along with each samples flagstats output
 
-- dehostedBAMs --> Folder containing the de-hosted composite BAM files
+- dehostedBAMs --> Folder containing the dehosted composite BAM files
 
-- dehosted_paired_fastqs --> Folder containing the final de-hosted, paired fastq reads (main and final output)
+- dehosted_paired_fastqs --> Folder containing the final dehosted, paired fastq reads (main and final output)
 
 - removal_summary --> CSV file containing read removal metrics
 
@@ -230,6 +230,7 @@ Other arguments include:
 | min_length | Minimum fastq read length to keep | 400 | Yes |
 | max_length | Maximum fastq read length to keep | 2400 | Yes |
 | fast5_directory | Directory of run associated fast5 files to be dehosted | None | Yes |
+| min_read_count  | Minimum read count required to do fast5 regeneration | 1 | Yes
 
 #### **Running**
 
@@ -237,24 +238,25 @@ Full instructions on how to easily install and run the Nanopore Minimap2 fastq d
 
 1. Setup all necessary resources:
 
-    - [Conda](https://conda.io/en/latest/miniconda.html) with nextflow installed into an environment
+    - [Conda](https://conda.io/en/latest/miniconda.html) with nextflow installed into an environment OR all tools installed and available to skip using conda
 
-    - A copy of the hg38 human reference genome
+    - A copy of the hg38 human reference genome OR a composite minimap2 index (mmi file) for the human reference genome and Sars-CoV-2 genome
 
     - One of the following as an input to dehost:
         - A directory with barcoded directories containing fastq files
-        - A directory with fastq files
+        - A directory with named singular fastq files (one fastq file per sample)
 
 2. (OPTIONAL) Strictly demultiplex the data (if using barcoded directories as input) before running the pipeline
 
     - Demultiplex the data using [guppy_barcoder](https://community.nanoporetech.com) (proprietary from ONT) and the `--require_barcodes_both_ends` flag to make sure that barcodes are present on each end of the reads.
         - There are some spots in the genome where this helps in resolution when analyzing the data
     
-    - Note that the output fastq files are not able to be demultiplexed anymore.
+    - **Note** that the output fastq files are not able to be demultiplexed anymore
+        - May be able to be fixed in a later version
 
-3. Activate the conda environment and run the pipeline
+3. Ensure nextflow is available and then run the pipeline
 
-    Basic command to generate just dehosted fastq files out:
+    Basic command with conda to generate just dehosted fastq files out:
     ```
     nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq_directory <path/to/reads> --human_ref <path/to/hg38.fa>
     ```
@@ -267,20 +269,20 @@ Full instructions on how to easily install and run the Nanopore Minimap2 fastq d
 4. All subsequent runs can be sped up using the `full/path/to/results/compositeMinimapIndex/composite_ref.mmi` file as follows:
 
     ```
-    nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq_directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_bwa_index <full/path/to/results/compositeMinimapIndex/composite_ref.mmi>
+    nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq_directory <path/to/reads> --human_ref <path/to/hg38.fa> --composite_minimap2_index <full/path/to/results/compositeMinimapIndex/composite_ref.mmi>
     ```
 
-**Note**: At the moment, you need to specify the full path to the made index or the pipeline will error out! But adding this removes the > 1 hour indexing step!
+**Note**: At the moment, you need to specify the full path to the made index or the pipeline will error out! But adding this removes the long indexing step!
 
 #### **Outputs**
 
 Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pipeline include:
 
-- fastq_pass --> Folder containing the finished de-hosted demultiplexed fastq files that can be used for another analysis
+- fastq_pass --> Folder containing the finished dehosted fastq files that can be used for another analysis (separated by either barcode## or sample name)
 
-- fast5_pass --> Folder containing the finished de-hosted demultiplexed fast5 files that can be used to run another analysis (if --fast5_directory is given)
+- fast5_pass --> Folder containing the finished dehosted fast5 files that can be used to run another analysis (separated by either barcode## or sample name). Only if --fast5_directory is given.
 
-- sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file to allow data to be re-ran (if --fast5_directory is given)
+- sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file to allow data to be re-ran. Only if --fast5_directory is given
 
 - removal_summary --> CSV file containing read removal metrics. Found in `./results/<run_name>/` instead
 
@@ -441,9 +443,9 @@ Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pip
 
 - dehosted_fast5 --> Folder containing the dehosted fast5 results of nanostripper for each barcode
 
-- fast5_pass --> Folder containing the finished de-hosted demultiplexed fast5 files that can be used to run another analysis
+- fast5_pass --> Folder containing the finished dehosted demultiplexed fast5 files that can be used to run another analysis
 
-- fastq_pass --> Folder containing the finished de-hosted demultiplexed fastq files that can be used for another analysis
+- fastq_pass --> Folder containing the finished dehosted demultiplexed fastq files that can be used for another analysis
 
 - sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file
 
@@ -470,7 +472,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
 
 2. Guppy basecalling
 
-    Using guppy to re-basecall the remaining reads. This is done so that the most up to date version of Guppy is used and the best results are obtained as not all of the instraments are updated. A guppy environment must be provided as a parameter (at least CPU) to run this step and if none is given, the pipeline will not continue and you will only have the de-hosted fast5 files.
+    Using guppy to re-basecall the remaining reads. This is done so that the most up to date version of Guppy is used and the best results are obtained as not all of the instraments are updated. A guppy environment must be provided as a parameter (at least CPU) to run this step and if none is given, the pipeline will not continue and you will only have the dehosted fast5 files.
 
     - Inputs:
         - Dehosted barcoded fast5 files
