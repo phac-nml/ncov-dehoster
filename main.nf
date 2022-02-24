@@ -106,9 +106,11 @@ workflow {
                 nanoporeNanostripperDehosting(ch_fast5, ch_HumanReference, ch_CovidReference)
 
             } else if ( nonBarcodedFast5 ) {
+                println('Non Barcoded Fast5 files unavailable to dehost')
                 System.exit(1)
 
             } else {
+                println('Unable to figure out input')
                 System.exit(1)
             }
 
@@ -116,7 +118,7 @@ workflow {
         } else {
             // First check if barcoded or not, need to 
             barcodedFastq = file("${params.fastq_directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
-            nonBarcodedFastq = file("${params.fastq_directory}/*.fastq", type: 'file', maxDepth: 1)
+            nonBarcodedFastq = file("${params.fastq_directory}/*.fastq*", type: 'file', maxDepth: 1)
             if ( barcodedFastq ) {
                 Channel.fromPath( barcodedFastq )
                     .filter{ d ->
@@ -132,6 +134,9 @@ workflow {
             } else if ( nonBarcodedFastq ) {
                 Channel.fromPath( nonBarcodedFastq )
                     .set{ ch_fastq }
+            } else {
+                println('Unable to figure out input')
+                System.exit(1)
             }
             nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference)
         }

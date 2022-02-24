@@ -30,7 +30,7 @@ process fastqSizeSelection_MM2 {
     script:
 
     // Base ID name
-    sampleName = fastq.getBaseName()
+    sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
     
     // Fastq input can either be a directory or a set of fastq files
     //  Outputs are the same then after
