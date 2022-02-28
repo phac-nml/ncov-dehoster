@@ -102,6 +102,24 @@ process regenerateFastqFiles {
     """
 }
 
+process regenerateFastqFilesFlat {
+    publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/", pattern: "*.host_removed.fastq", mode: "copy"
+
+    label 'smallCPU'
+    tag { sampleName }
+
+    input:
+    tuple val(sampleName), path(dehosted_bam)
+
+    output:
+    tuple val(sampleName), file("${sampleName}.host_removed.fastq")
+
+    script:
+    """
+    samtools fastq $dehosted_bam > ${sampleName}.host_removed.fastq
+    """
+}
+
 process regenerateFast5s_MM2 {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${sampleName}", mode: "copy"
 

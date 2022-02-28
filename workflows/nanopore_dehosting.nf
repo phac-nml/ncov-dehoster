@@ -25,6 +25,7 @@ include {
   compositeMappingMM2;
   removeHumanReads;
   regenerateFastqFiles;
+  regenerateFastqFilesFlat;
   regenerateFast5s_MM2
   } from '../modules/nanopore_minimap2.nf'
 
@@ -121,16 +122,26 @@ workflow nanoporeMinimap2Dehosting {
 
     removeHumanReads(compositeMappingMM2.out)
 
-    regenerateFastqFiles(removeHumanReads.out.bam)
+    // Output either flat fastq directory or normal in subdirectories based on cl input --flat
+    if ( params.flat ) {
+      regenerateFastqFilesFlat(removeHumanReads.out.bam)
+      regenerateFastqFilesFlat.out
+                              .filter{ it[1].countFastq() >= params.min_read_count }
+                              .set { ch_host_rm_fastq }
+    } else {
+      regenerateFastqFiles(removeHumanReads.out.bam)
+      regenerateFastqFiles.out
+                          .filter{ it[1].countFastq() >= params.min_read_count }
+                          .set { ch_host_rm_fastq }
+    }
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
     // This process is slow without a lot of computational support behind it however so its optional
     if ( params.fast5_directory ) {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
-      regenerateFast5s_MM2(regenerateFastqFiles.out
-                                         .filter{ it[1].countFastq() >= params.min_read_count }
-                                         .combine(ch_Fast5))
+      regenerateFast5s_MM2(ch_host_rm_fastq.combine(ch_Fast5))
+
       generateSimpleSequencingSummary(regenerateFast5s_MM2.out.collect())
     }
 
