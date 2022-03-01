@@ -71,7 +71,7 @@ process removeHumanReads {
     tuple val(sampleName), path(sorted_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam"), optional: true, emit: bam
     path "${sampleName}*.csv", emit: csv
 
     script:
@@ -80,7 +80,7 @@ process removeHumanReads {
 
     """
     samtools index $sorted_bam
-    dehost_nanopore.py --file $sorted_bam --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
+    dehost_nanopore.py --file $sorted_bam --min_reads ${params.min_read_count} --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
     """
 }
 

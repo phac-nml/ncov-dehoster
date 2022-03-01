@@ -15,6 +15,7 @@ def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', required=True, help='Composite Reference BAM file of mapped reads')
     parser.add_argument('-k', '--keep_id', required=False, default='MN908947.3', type=str, help='Reference ID of genome to keep. Default: MN908947.3')
+    parser.add_argument('-m', '--min_reads', required=False, default=1, type=int, help='Minimum number of reads required to generate dehosted BAM file')
     parser.add_argument('-q', '--keep_minimum_quality', required=False, type=int, default=60, help='Minimum quality of the reads to keep. Default: 60')
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=10, help='Minimum quality of the reads to be included in removal. Default: 10')
     parser.add_argument('-o', '--output', required=False, default='out.bam', help='Output BAM name')
@@ -86,7 +87,11 @@ def main():
 
     # Keep reads based on input contig ID and mapping qualities given and then generate the output bam file using input files header with pysam
     keep_read_list, h_count, p_count, header = keep_reads_by_contig_id(args.file, args.keep_id, args.remove_minimum_quality, args.keep_minimum_quality)
-    generate_dehosted_output(keep_read_list, header, args.output)
+    if len(keep_read_list) >= args.min_reads:
+        generate_dehosted_output(keep_read_list, header, args.output)
+        output_generated = True
+    else:
+        output_generated = False
 
     # Set up the output CSV file for tracking
     if len(keep_read_list) == 0:
@@ -99,6 +104,7 @@ def main():
                 'poor_quality_reads_filtered' : p_count,
                 'reads_kept' : len(keep_read_list),
                 'percentage_kept' : "{:.2f}".format(percentage_kept),
+                'meets_count_filter' : output_generated,
                 'github_commit' : args.revision
             }
 
