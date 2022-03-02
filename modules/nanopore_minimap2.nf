@@ -71,7 +71,7 @@ process removeHumanReads {
     tuple val(sampleName), path(sorted_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam"), optional: true, emit: bam
     path "${sampleName}*.csv", emit: csv
 
     script:
@@ -80,12 +80,30 @@ process removeHumanReads {
 
     """
     samtools index $sorted_bam
-    dehost_nanopore.py --file $sorted_bam --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
+    dehost_nanopore.py --file $sorted_bam --min_reads ${params.min_read_count} --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
     """
 }
 
 process regenerateFastqFiles {
     publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}", pattern: "*.host_removed.fastq", mode: "copy"
+
+    label 'smallCPU'
+    tag { sampleName }
+
+    input:
+    tuple val(sampleName), path(dehosted_bam)
+
+    output:
+    tuple val(sampleName), file("${sampleName}.host_removed.fastq")
+
+    script:
+    """
+    samtools fastq $dehosted_bam > ${sampleName}.host_removed.fastq
+    """
+}
+
+process regenerateFastqFilesFlat {
+    publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/", pattern: "*.host_removed.fastq", mode: "copy"
 
     label 'smallCPU'
     tag { sampleName }

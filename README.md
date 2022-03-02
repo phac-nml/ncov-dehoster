@@ -229,8 +229,9 @@ Other arguments include:
 | run_name | Specify output run name to separate results | None | No |
 | min_length | Minimum fastq read length to keep | 400 | Yes |
 | max_length | Maximum fastq read length to keep | 2400 | Yes |
+| min_read_count | Minimum read count required to output results | 1 | Yes
 | fast5_directory | Directory of run associated fast5 files to be dehosted | None | Yes |
-| min_read_count  | Minimum read count required to do fast5 regeneration | 1 | Yes
+| flat | Output flat fastq_pass folder instead of sample name subdirectories (better for folder input of named files) | None | Yes
 
 #### **Running**
 
@@ -278,13 +279,20 @@ Full instructions on how to easily install and run the Nanopore Minimap2 fastq d
 
 Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pipeline include:
 
-- fastq_pass --> Folder containing the finished dehosted fastq files that can be used for another analysis (separated by either barcode## or sample name)
+- fastq_pass --> Folder containing the finished dehosted fastq files that pass the minimum read check (default: 1) which can be used for any other analyses
+    - Separated by either barcode## or sample name depending upon input fastq folder structure
+    - If `--flat` is passed, all fastq files will be in the main `fastq_pass` directory instead of named subdirectories.
 
-- fast5_pass --> Folder containing the finished dehosted fast5 files that can be used to run another analysis (separated by either barcode## or sample name). Only if --fast5_directory is given.
+- fast5_pass --> Folder containing the finished dehosted fast5 files that can be used for any other analyses
+    - Separated by either barcode## or sample name depending upon input fastq folder structure
+    - Only if --fast5_directory flag is passed
 
-- sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file to allow data to be re-ran. Only if --fast5_directory is given
+- sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file to allow data to be re-ran.
+    - Only if --fast5_directory flag is passed
 
 - removal_summary --> CSV file containing read removal metrics. Found in `./results/<run_name>/` instead
+    - Shows the number and percentage of reads kept
+    - Shows if the sample failed the minimum read filter
 
 The output structure is setup as such so that the `run_name` organizes the sequencing data in the `run` folder and all analyses can be done in the `run_name` folder to separate out runs better.
 

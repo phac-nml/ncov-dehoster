@@ -57,15 +57,20 @@ def helpStatement() {
     Minimap2 Pipeline Arguments:
         Mandatory:
             --fastq_directory [path]            Path to directory containing either barcoded directories OR individual fastq files
+            --run_name [str]                    Seperate results based on a run name input
 
         Optional:
             --fast5_directory [path]            Path to fast5 directories associated with the data
             --composite_minimap2_index [file]   Path to composite minimap2 .mmi file to speed up analysis
+            --flat                              Flag to flatten fastq output from named dirs to flat files in output fastq_pass dir
             --min_length [i]                    Minimum length of fastq reads to keep (Default: 400)
             --max_length [i]                    Maximum length of fastq reads to keep (Default: 2400)
+            --min_read_count [i]                Minimum read count required to output results (Default: 1)
 
         Example Command:
-            nextflow run phac-nml/ncov-dehoster --human_ref ./hg38.fa -profile conda --nanopore --minimap2 --fastq_directory ./fastqs
+            nextflow run phac-nml/ncov-dehoster --human_ref ./hg38.fa -profile conda --nanopore --minimap2
+                --fastq_directory ./fastqs 
+                --run_name 'example_run_name'
       
   """.stripIndent()
 }
