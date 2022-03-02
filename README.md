@@ -1,15 +1,17 @@
 # ncov-dehoster
 
 ## About:
-Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore sequencing data.
+Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore sequencing data. Basic details for the three available pipelines are as follows:
 
-**Illumina** - Competitive mapping approach with bwa mem to remove human reads from the input fastq files while maintaining as many viral reads as possible
+**Illumina Paired Pipeline \(v0.1.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
 
-**Nanopore Minimap2** - Competitive mapping approach based around removing human reads from either input fastq files or barcoded directories while maintaining as many viral reads as possible. Strict demultiplexing is recommended before running. There is optional fast5 dehosting available in this pipeline as an additional argument.
+**Nanopore Minimap2 Fastq Pipeline \(v0.1.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
+- Strict demultiplexing is *highly recommended* before running (unable to do so after and it improves downstream analyses)
+- Optional fast5 dehosting available with argument `--fast5_directory [dir]`
 
-**Nanopore Nanostripper** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and then subsequently [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate dehosted, demultiplexed fast5 and fastq files from input fast5 files. 
+**Nanopore Nanostripper Fast5 Pipeline \(v0.1.0-Developmental)** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate dehosted, demultiplexed fast5 and fastq files from input fast5 files. 
 
-- *Currently* the nanopore nanostripper dehosting pipeline is rough to run and probably will be for a while. For a full 96 sample run it takes 6+ hours to complete. You will also have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run:
+- *Currently Developmental*, the nanopore nanostripper dehosting pipeline is slow (full 96 sample run takes 6+ hours) and not setup well for external users which makes it **unrecommended** to try. You will have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run and then it still may not work correctly:
     - `--guppyGPU <path/to/guppyGPU/env>`
     - `--guppyCPU <path/to/guppyCPU/env>`
     - `--nanostripper_env_path <path/to/nanostripper/env`
@@ -19,15 +21,23 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore
 
 ## Index
 
+[About](#about)
+
+[Changelog](#changelog)
+
+[Dependencies and Data](#dependencies-and-data-required)
+- [Dependencies](#dependencies)
+- [Data Required](#data-required)
+
 [Quick Start](#quick-start)
 - [Illumina](#illumina)
 - [Nanopore Minimap2 Fastq](#minimap2-fastq-pipeline)
-- [Nanopore Nanostripper Fast5](#nanostripper-fast5-pipeline)
+- [Nanopore Nanostripper Fast5 (Developmental)](#nanostripper-fast5-pipeline-developmental)
 
 [Pipeline Full Details](#pipeline-details)
 - [Illumina Paired Fastq Dehosting Pipeline](#illumina-paired-fastq-dehosting-pipeline)
 - [Nanopore Fastq Minimap2 Dehosting and Regeneration Pipeline](#nanopore-fastq-minimap2-dehosting-and-regeneration-pipeline)
-- [Nanopore Fast5 Nanostripper Dehosting and Regeneration Pipeline](#nanopore-fast5-nanostripper-dehosting-and-regeneration-pipeline)
+- [Nanopore Fast5 Nanostripper Dehosting and Regeneration Pipeline (Developmental)](#nanopore-fast5-nanostripper-dehosting-and-regeneration-pipeline-developmental)
 
 [Profiles](#profiles)
 
@@ -35,13 +45,56 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina and Nanopore
 
 ------
 
+## Changelog
+
+#### Release v0.1.0
+- Initial release
+
+------
+
+## Dependencies and Data Required
+
+### Dependencies
+
+#### Illumina Pipeline
+- csvtk
+- bwa
+- pysam
+- samtools
+
+#### Nanopore Minimap2 Fastq Pipeline
+- artic
+- csvtk
+- minimap2
+- ont-fast5-api
+- pip
+- pysam
+
+#### Nanopore Nanostripper Fast5 Pipeline
+- artic
+- csvtk
+- guppy-cpu
+- guppy-gpu
+- nanostripper
+
+### Data Required
+
+- Human Reference Sequence Fasta file
+    - Get the reference genome from NCBI with the following:
+    ```
+    wget ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
+    gunzip GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
+    ```
+
+------
+
 ## Quick Start:
 
-Simple commands to start dehosting. Greater detail on what each entails is found below in the Pipeline Details sections. You can also do `nextflow run phac-nml/ncov-dehoster --help` to get more info on the available processes
+Simple commands to start dehosting along with the dependencies required . Greater detail on what each pipeline entails are found below in the individual [Pipeline Details Sections](#pipeline-details). You can also do `nextflow run phac-nml/ncov-dehoster --help` to get more info on the available processes
 
 ### Illumina
 
-Run the **Illumina** pipeline with the following command:
+Run the *Illumina* pipeline with the following command:
 
 ```
 nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/paired_reads/dir> --human_ref <path/to/reference>
@@ -53,7 +106,7 @@ Minimum computational specs required for the Illumina dehosting pipeline are 3+ 
 
 #### Minimap2 Fastq Pipeline
 
-Run the basic **Minimap2 Fastq** pipeline with the following command:
+Run the basic *Minimap2 Fastq* pipeline with the following command:
 
 ```
 nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq_directory <path/to/fastqs> --human_ref <path/to/reference> --run_name 'whatever_you_want'
@@ -61,11 +114,11 @@ nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq
 
 Minimum computational specs required for the minimap2 nanopore fastq host removal pipeline are 2+ cpu and 12+G memory
 
-#### Nanostripper Fast5 Pipeline
+#### Nanostripper Fast5 Pipeline (Developmental)
 
-*Requires conda* due to use of guppy environments as parameters
+*Requires conda* due to use of guppy environments as parameters at the moment
 
-Run the full **Nanopore Nanostripper** pipeline with the following command:
+Run the full *Nanopore Nanostripper* pipeline with the following command:
 
 ```
 nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --nanostripper --fast5_directory <path/to/fast5_pass/> --human_ref <path/to/reference> --run_name 'whatever_you_want' --guppyCPU </path/to/conda_env/guppy-4.0.11-cpu/>
@@ -423,7 +476,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
 
 ------
 
-### Nanopore Fast5 Nanostripper Dehosting and Regeneration Pipeline
+### Nanopore Fast5 Nanostripper Dehosting and Regeneration Pipeline (Developmental)
 
 #### **Inputs**
 
