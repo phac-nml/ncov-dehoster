@@ -1,4 +1,4 @@
-## Version 0.2.0
+## Version 0.1.0
 ----------------
 Argument Changes:
 - Nanopore Nanostripper Pipeline:
@@ -25,7 +25,7 @@ General Developer Changes:
     - regenerateFast5s   -> regenerateFast5s_NS
 
 
-## Version 0.1.0
+## Version 0.0.1
 ----------------
 
-- Initial Release
+- Initial Release that works
