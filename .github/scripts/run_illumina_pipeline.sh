@@ -25,6 +25,6 @@ nextflow run ./main.nf \
 
 # Reset and Track
 mv .nextflow.log artifacts/illumina.nextflow.log
-rm -rf results work/ .nextflow*
+rm -rf results work/ .nextflow* partial_hg38_ref.fa
 
 echo "Done"
