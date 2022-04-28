@@ -13,9 +13,10 @@ gunzip partial_hg38_ref.fa.gz
 wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_fastq/illumina-18_S15_R1.fastq.gz https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_fastq/illumina-18_S15_R2.fastq.gz -P ./illumina_fastq
 wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_fastq/illumina-4_S12_R1.fastq.gz https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_fastq/illumina-4_S12_R2.fastq.gz -P ./illumina_fastq
 
-# Run Flat Pipeline
-rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
+# Workaround for mamba-org/mamba#488
+rm -f /usr/share/miniconda/pkgs/cache/*.json
 
+# Run Illumina Pipeline
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \
