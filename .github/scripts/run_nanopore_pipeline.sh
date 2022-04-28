@@ -14,6 +14,8 @@ wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/nanopore_
 wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/nanopore_fastq/nanopore-2.fastq.gz -P ./nanopore_fastq
 
 # Run Flat Pipeline
+rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
+
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \
@@ -29,7 +31,6 @@ mv .nextflow.log artifacts/minimap2_flat.nextflow.log
 rm -rf results work/ .nextflow*
 
 # Run non-flat and test for cache dir working
-rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \

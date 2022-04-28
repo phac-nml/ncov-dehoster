@@ -15,6 +15,7 @@ wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_
 
 # Run Flat Pipeline
 rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
+
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \
