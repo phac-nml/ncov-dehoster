@@ -29,6 +29,7 @@ mv .nextflow.log artifacts/minimap2_flat.nextflow.log
 rm -rf results work/ .nextflow*
 
 # Run non-flat and test for cache dir working
+rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \

@@ -14,6 +14,7 @@ wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_
 wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_fastq/illumina-4_S12_R1.fastq.gz https://raw.githubusercontent.com/DarianHole/test-datasets/master/illumina_fastq/illumina-4_S12_R2.fastq.gz -P ./illumina_fastq
 
 # Run Flat Pipeline
+rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \
