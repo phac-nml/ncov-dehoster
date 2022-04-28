@@ -35,12 +35,12 @@ jobs:
     - name: Nextflow Version
       run: | 
         nextflow -v
-    - name: List Files
-      run: |
-        ls -al ${{ github.workspace }}
     - name: Run Nextflow Nanopore Minimap2 Pipeline
       run: bash .github/scripts/run_nanopore_pipeline.sh
     - name: Run Nextflow Illumina Pipeline
       run: bash .github/scripts/run_illumina_pipeline.sh
+    - name: List Files at end
+      run: |
+        ls -al ${{ github.workspace }}
     - name: Done
       run: echo "Done"
