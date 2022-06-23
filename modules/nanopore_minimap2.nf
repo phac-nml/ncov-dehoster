@@ -80,7 +80,7 @@ process removeHumanReads {
 
     """
     samtools index $sorted_bam
-    dehost_nanopore.py --file $sorted_bam --min_reads ${params.min_read_count} --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
+    dehost_nanopore.py --file $sorted_bam --min_reads ${params.min_read_count} --keep_id ${params.keep_ref_name} --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
     """
 }
 
