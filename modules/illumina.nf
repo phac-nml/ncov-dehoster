@@ -84,7 +84,7 @@ process dehostBamFiles {
     """
     samtools index ${composite_bam}
     dehost_illumina.py --file ${composite_bam} \
-    --keep_id ${params.covid_ref_id} \
+    --keep_id ${params.keep_ref_id} \
     -q ${params.keep_min_map_quality} \
     -Q ${params.remove_min_map_quality} \
     -o ${sampleName}.dehosted.bam \

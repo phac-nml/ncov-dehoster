@@ -3,9 +3,9 @@
 ## About:
 Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore sequencing data. Basic details for the three available pipelines are as follows:
 
-**Illumina Paired Pipeline \(v0.1.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
+**Illumina Paired Pipeline \(v0.2.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
 
-**Nanopore Minimap2 Fastq Pipeline \(v0.1.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
+**Nanopore Minimap2 Fastq Pipeline \(v0.2.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
 - Strict demultiplexing is *highly recommended* before running (unable to do so after and it improves downstream analyses)
 - Optional fast5 dehosting available with argument `--fast5_directory [dir]`
 
@@ -45,7 +45,10 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 
 ------
 
-## Changelog
+## Changelog Highlights
+
+#### Release v0.2.0
+- Better user parameter options
 
 #### Release v0.1.0
 - Initial release

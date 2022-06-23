@@ -12,6 +12,8 @@ def helpStatement() {
 
     Profiles:
         -profile [conda,nml]            Configuration profile to use. Can use both if separated by a comma
+            conda                         Utilize conda to control tool and dependency installation (uses mamba for environment install)
+            nml                           NML specific profile to take advantage of NML cluster resources
 
     Pick a Pipeline:
         --illumina                      Run Illumina BWA_MEM based competitive host removal pipeline on paired fastq files
@@ -24,7 +26,8 @@ def helpStatement() {
             --directory [path]          Path to directory containing paired fastq files to dehost
         
         Optional:
-            --composite_bwa_index [path]    Path to directory containing BWA indexed composite genome
+            --composite_bwa_index [path]    Path to directory containing BWA indexed composite genome (Note: still need human reference)
+            --keep_ref_id [str]             String name of reference contig ID to keep during host removal (Default: 'MN908947.3')
             --keep_min_map_quality [i]      Integer minimum mapping quality of COVID-19 reads to keep (Default: 60)
             --remove_min_map_quality [i]    Integer minimum mapping quality of HUMAN reads to remove (Default: 0)
 
@@ -42,7 +45,7 @@ def helpStatement() {
             --guppyGPU [path]               Path to guppy GPU conda environment to basecall
 
         Optional:
-            --min_length [i]                Minimum length of fastq reads to keep (Default: 400)
+            --min_length [i]                Minimum length of fastq reads to keep (Default: 350)
             --max_length [i]                Maximum length of fastq reads to keep (Default: 2400)
             --human_minimap2_index [file]   Path to minimap2 human indexed .mmi file to speed up analysis
 
@@ -62,6 +65,7 @@ def helpStatement() {
         Optional:
             --fast5_directory [path]            Path to fast5 directories associated with the data
             --composite_minimap2_index [file]   Path to composite minimap2 .mmi file to speed up analysis
+            --keep_ref_id [str]                 String name of reference contig ID to keep during host removal (Default: 'MN908947.3')
             --flat                              Flag to flatten fastq output from named dirs to flat files in output fastq_pass dir
             --min_length [i]                    Minimum length of fastq reads to keep (Default: 400)
             --max_length [i]                    Maximum length of fastq reads to keep (Default: 2400)

@@ -1,3 +1,15 @@
+## Version 0.2.0
+----------------
+Argument Changes:
+- Added `--keep_ref_id <ID>` as an argument for illumina and nanopore fastq data
+    - Allows for a different reference ID to be kept if the reference sequence is changed
+- Removed `--covid_ref_id <ID>` as an illumina specific argument
+    - Replaced by above
+
+Parameter Changes:
+- Default minimum read length for nanopore data (`--min_length`) set to 350 from 400 to better accommodate shorter amplicon schemes
+
+
 ## Version 0.1.0
 ----------------
 Argument Changes:
