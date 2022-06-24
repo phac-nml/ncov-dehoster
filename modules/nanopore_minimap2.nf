@@ -136,6 +136,6 @@ process regenerateFast5s_MM2 {
     """
     mkdir -p $sampleName
     mv $dehosted_fastq_file $sampleName/
-    bash fast5-dehost-regenerate.sh $sampleName/ $sampleName $fast5_in ${params.nanopore_threads}
+    bash fast5-dehost-regenerate.sh $sampleName/ $sampleName $fast5_in ${task.cpus}
     """
 }

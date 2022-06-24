@@ -138,7 +138,7 @@ process regenerateFast5s_NS {
     def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
 
     """
-    bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted ${params.nanopore_threads}
+    bash fast5-dehost-regenerate.sh $dehosted_fastq_barcode $barcodeName $fast5_dehosted ${task.cpus}
 
     bash generate-csv.sh ${barcodeName} ${fast5_dehosted}/${barcodeName}/nanostripper_summary.txt fast5_pass/${barcodeName}/filename_mapping.txt ${rev}
     """

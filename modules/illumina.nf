@@ -58,8 +58,9 @@ process compositeMappingBWA {
     path("${sampleName}.flagstats.txt")
 
     script:
+    processThreads = task.cpus * 2
     """
-    bwa mem -t ${params.illumina_threads} ${composite_reference} ${forward} ${reverse} | samtools sort --threads ${params.illumina_threads} -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    bwa mem -t ${processThreads} ${composite_reference} ${forward} ${reverse} | samtools sort --threads ${task.cpus} -T "temp" -O BAM -o ${sampleName}.sorted.bam
     samtools flagstat ${sampleName}.sorted.bam > ${sampleName}.flagstats.txt
     """
 }
