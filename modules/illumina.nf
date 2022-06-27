@@ -38,7 +38,7 @@ process indexCompositeReference {
     path(composite_ref)
 
     output:
-    file("*.fa*"), emit: index
+    path("*.fa*"), emit: index
     path("*.process.yml"), emit: versions
 
     script:
