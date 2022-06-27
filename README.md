@@ -49,6 +49,8 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 
 #### Release v0.2.0
 - Better user parameter options
+    - Added `--keep_ref_id <ID>` to allow user to pick what reference ID they want to keep in output fastq files
+- Process and tool version output added
 
 #### Release v0.1.0
 - Initial release
@@ -89,6 +91,8 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
     gunzip GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
     ```
 
+    - Note that the newly released human reference genome (from April 2022 I believe) has not yet been tested but should work with the process
+
 ------
 
 ## Quick Start:
@@ -103,7 +107,7 @@ Run the *Illumina* pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --illumina --directory <path/to/paired_reads/dir> --human_ref <path/to/reference>
 ```
 
-Minimum computational specs required for the Illumina dehosting pipeline are 3+ cpu and 16+G memory.
+Minimum computational specs required for the Illumina dehosting pipeline are 3+ cpu and 16+G memory. More resources may be needed depending on the size of the input fastq files.
 
 ### Nanopore
 
@@ -115,11 +119,11 @@ Run the basic *Minimap2 Fastq* pipeline with the following command:
 nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq_directory <path/to/fastqs> --human_ref <path/to/reference> --run_name 'whatever_you_want'
 ```
 
-Minimum computational specs required for the minimap2 nanopore fastq host removal pipeline are 2+ cpu and 12+G memory
+Minimum computational specs required for the minimap2 nanopore fastq host removal pipeline are 2+ cpu and 12+G memory. More resources may be needed depending on the size of the input fastq files.
 
 #### Nanostripper Fast5 Pipeline (Developmental)
 
-*Requires conda* due to use of guppy environments as parameters at the moment
+*Requires conda* due to use of how the guppy environments are input as parameters at the moment (and that they cannot be made with conda as they are proprietary)
 
 Run the full *Nanopore Nanostripper* pipeline with the following command:
 
@@ -129,7 +133,7 @@ nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --nanostripper --f
 
 You can also just generate dehosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
 
-Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory
+Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory. GPU highly recommended to run or it will take >12 hours.
 
 ------
 
@@ -155,7 +159,7 @@ Other arguments include:
 | directory | Directory containing paired fastq reads | None | No |
 | human_ref | Fasta formatted human reference genome | None | No |
 | cov2019_ref | Fasta formatted Sars-CoV-2 reference genome | data/nCoV-2019.reference.fasta | No |
-| covid_ref_id | Sars-CoV-2 reference genome header id | MN908947.3 | No |
+| keep_ref_id | Reference genome header id to keep | MN908947.3 | No |
 | keep_min_map_quality | Minimum mapping quality of covid reads to keep | 60 | No |
 | remove_min_map_quality | Minimum mapping quality of the human reads to remove | 0 | No |
 | composite_bwa_index | Directory containing BWA indexes for a composite human/viral reference --  **Speeds up analysis if given | None | Yes |
@@ -197,6 +201,8 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
 - dehosted_paired_fastqs --> Folder containing the final dehosted, paired fastq reads (main and final output)
 
 - removal_summary --> CSV file containing read removal metrics
+
+- process_versions --> YML file containing process names with their tools and versions associated for tracking
 
 #### **Process**
 
@@ -262,9 +268,19 @@ Found in `./results/` directory, the outputs for the Illumina pipeline include:
 - Using `--composite_bwa_index </path/to/composite_index_folder/` will speed up the analysis as the index won't need to be generated
     - Example generation: `cat human.fa sarsCoV2.fa > composite.fa && bwa index -a bwtsw composite.fa`
 
-- If you are using a different SarsCoV2 reference genome than the one provided, make sure to match the `--covid_ref_id` so that the competitive mapping will pull out viral reads
+- If you are using a different SarsCoV2 reference genome than the one provided, make sure to match the `--keep_ref_id` so that the competitive mapping will pull out viral reads
 
 - The `keep_min_map_quality` and `remove_min_map_quality` can be adjusted depending on the tolerance for human reads. The defaults are set at the most strict that then can be
+
+- Host removal status can be checked with Kraken2 using a command similar to the following one each sample in the run:
+    ```
+    kraken2 --confidence 0.1 --db PATH/TO/kraken2_covid19_human_db/ --threads <THREADS> --report <SAMPLE>-REPORT.tsv --output <SAMPLE>-kraken.tsv <FASTQ_FILE_IN>
+    ```
+
+    - And then checking the total human reads with:
+        ```
+        grep -P "\s+9606\s+" -H *-kraken.tsv > human.tsv | wc -l human.tsv
+        ```
 
 ------
 
@@ -287,6 +303,7 @@ Other arguments include:
 | max_length | Maximum fastq read length to keep | 2400 | Yes |
 | min_read_count | Minimum read count required to output results | 1 | Yes
 | fast5_directory | Directory of run associated fast5 files to be dehosted | None | Yes |
+| keep_ref_id | Reference genome header id to keep | MN908947.3 | No |
 | flat | Output flat fastq_pass folder instead of sample name subdirectories (better for folder input of named files) | None | Yes
 
 #### **Running**
@@ -349,6 +366,8 @@ Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pip
 - removal_summary --> CSV file containing read removal metrics. Found in `./results/<run_name>/` instead
     - Shows the number and percentage of reads kept
     - Shows if the sample failed the minimum read filter
+
+- process_versions --> YML file containing process names with their tools and versions associated for tracking
 
 The output structure is setup as such so that the `run_name` organizes the sequencing data in the `run` folder and all analyses can be done in the `run_name` folder to separate out runs better.
 
@@ -437,8 +456,8 @@ The output structure is setup as such so that the `run_name` organizes the seque
         - sequencing_summary.txt
     
     - Tools
-        - fast5_subset
         - awk
+        - fast5_subset
 
 #### **Additional Info**
 

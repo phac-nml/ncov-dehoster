@@ -49,7 +49,6 @@ def helpStatement() {
             --max_length [i]                    Maximum length of fastq reads to keep (Default: 2400)
             --min_read_count [i]                Minimum read count required to output results (Default: 1)
             --flat                              Flag to flatten fastq output from named dirs to flat files in the output fastq_pass dir
-                                                    See the README for an example of the output differences
 
         Example Command:
             nextflow run phac-nml/ncov-dehoster --human_ref ./hg38.fa -profile conda --nanopore --minimap2
