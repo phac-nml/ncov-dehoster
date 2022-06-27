@@ -8,7 +8,7 @@ process generateMinimap2Index {
     path(viral_ref)
 
     output:
-    file("composite_ref.mmi"), emit: index
+    path("composite_ref.mmi"), emit: index
     path("*.process.yml"), emit: versions
 
     script:
