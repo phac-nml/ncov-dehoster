@@ -170,11 +170,18 @@ process combineCSVs {
     path(csvs)
 
     output:
-    path("removal_summary.csv")
+    path("removal_summary.csv"), emit: summary
+    path("*.process.yml"), emit: versions
 
     script:
     """
     csvtk concat *.csv > summary.csv
     csvtk sort -k1 summary.csv > removal_summary.csv
+
+    # Versions #
+    cat <<-END_VERSIONS > csv.process.yml
+        "${task.process}":
+            csvtk: \$(echo \$(csvtk version | sed 's/csvtk //'))
+    END_VERSIONS
     """
 }

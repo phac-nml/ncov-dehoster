@@ -9,6 +9,11 @@ Argument Changes:
 Parameter Changes:
 - Default minimum read length for nanopore data (`--min_length`) set to 350 from 400 to better accommodate shorter amplicon schemes
 
+General Developer Changes:
+- Changed code order for nanopore workflows
+    - All minimap2 code should be above nanostripper in the files now
+- General reformatting of code to try to make everything more consistent/cohesive
+
 
 ## Version 0.1.0
 ----------------

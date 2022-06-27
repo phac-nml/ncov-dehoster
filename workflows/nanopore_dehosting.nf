@@ -11,6 +11,8 @@ include {
   regenerateFast5s_MM2
 } from '../modules/nanopore_minimap2.nf'
 
+include { outputVersionsNanopore } from '../modules/versions.nf'
+
 // From nanostripper pipeline
 include {
   nanostripper;
@@ -33,6 +35,9 @@ workflow nanoporeMinimap2Dehosting {
       ch_CovidReference
     
     main:
+    // Setup tool version tracking - based on NF-Core's process
+    ch_versions = Channel.empty()
+
     // If given a reference utilize it, otherwise make it
     if ( params.composite_minimap2_index ) {
       Channel.fromPath("${params.composite_minimap2_index}")
@@ -40,28 +45,34 @@ workflow nanoporeMinimap2Dehosting {
     } else {
       generateMinimap2Index(ch_HumanReference, 
                                 ch_CovidReference)
-      generateMinimap2Index.out
+      generateMinimap2Index.out.index
                            .set{ ch_CompReference }
+
+      ch_versions = ch_versions.mix(generateMinimap2Index.out.versions)
     }
     
     fastqSizeSelection_MM2(ch_fastq)
     
-    compositeMappingMM2(fastqSizeSelection_MM2.out
+    compositeMappingMM2(fastqSizeSelection_MM2.out.fastq
                                            .combine(ch_CompReference))
 
-    removeHumanReads(compositeMappingMM2.out)
+    removeHumanReads(compositeMappingMM2.out.comp_bam)
 
     // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
     if ( params.flat ) {
       regenerateFastqFilesFlat(removeHumanReads.out.bam)
-      regenerateFastqFilesFlat.out
+      regenerateFastqFilesFlat.out.dehosted_fastq
                               .filter{ it[1].countFastq() >= params.min_read_count }
                               .set { ch_host_rm_fastq }
+
+      ch_versions = ch_versions.mix(regenerateFastqFilesFlat.out.versions.first())
     } else {
       regenerateFastqFiles(removeHumanReads.out.bam)
-      regenerateFastqFiles.out
+      regenerateFastqFiles.out.dehosted_fastq
                           .filter{ it[1].countFastq() >= params.min_read_count }
                           .set { ch_host_rm_fastq }
+
+      ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
     }
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
@@ -71,11 +82,20 @@ workflow nanoporeMinimap2Dehosting {
                         .set{ ch_Fast5 }
       regenerateFast5s_MM2(ch_host_rm_fastq.combine(ch_Fast5))
 
-      generateSimpleSequencingSummary(regenerateFast5s_MM2.out.collect())
+      ch_versions = ch_versions.mix(regenerateFast5s_MM2.out.versions.first())
+
+      generateSimpleSequencingSummary(regenerateFast5s_MM2.out.dehosted_fast5.collect())
     }
 
     // Finally make CSV output
     combineCSVs(removeHumanReads.out.csv.collect())
+
+    // Version Tracking and Output
+    ch_versions = ch_versions.mix(fastqSizeSelection_MM2.out.versions.first())
+    ch_versions = ch_versions.mix(compositeMappingMM2.out.versions.first())
+    ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
+    ch_versions = ch_versions.mix(combineCSVs.out.versions)
+    outputVersionsNanopore(ch_versions.collect())
 }
 
 // Workflow Nanostripper - NOT MAINTAINED AT THE MOMENT!!!//
