@@ -4,15 +4,15 @@
 nextflow.enable.dsl = 2
 
 // Modules
-include {helpStatement} from './modules/help.nf'
+include { helpStatement }                   from './modules/help.nf'
 
 // subworkflows
-include {illuminaDehosting} from './workflows/illumina_dehosting.nf'
-include {nanoporeNanostripperDehosting} from './workflows/nanopore_dehosting.nf'
-include {nanoporeMinimap2Dehosting} from './workflows/nanopore_dehosting.nf'
+include { illuminaDehosting }               from './workflows/illumina_dehosting.nf'
+include { nanoporeNanostripperDehosting }   from './workflows/nanopore_dehosting.nf'
+include { nanoporeMinimap2Dehosting }       from './workflows/nanopore_dehosting.nf'
 
 // Print Help
-if ( params.help ){
+if ( params.help ) {
     helpStatement()
     exit 0
 }
@@ -65,7 +65,6 @@ workflow {
                         .set{ ch_CovidReference }
 
     if ( params.illumina ) {
-        
         // Single-end or paired-end run - We don't support single end Illumina at this time
         if ( params.single_end ){
             Channel.fromPath( "${params.directory}/*.fastq", type: 'file', maxDepth: 1 )
@@ -82,8 +81,33 @@ workflow {
         }
     
     } else if ( params.nanopore ) {
+        // Minimap2 with Fastqs input
+        if ( params.minimap2 ) {
+            // First check if barcoded or not, need to 
+            barcodedFastq = file("${params.fastq_directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
+            nonBarcodedFastq = file("${params.fastq_directory}/*.fastq*", type: 'file', maxDepth: 1)
+            if ( barcodedFastq ) {
+                Channel.fromPath( barcodedFastq )
+                    .filter{ d ->
+                                def count = 0
+                                for (x in d.listFiles()) {
+                                    if (x.isFile()) {
+                                        count += 1
+                                    }
+                                }
+                                count > 0
+                    }.set{ ch_fastq }
+            
+            } else if ( nonBarcodedFastq ) {
+                Channel.fromPath( nonBarcodedFastq )
+                    .set{ ch_fastq }
+            } else {
+                println('Unable to figure out input')
+                System.exit(1)
+            }
+            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference)
         // Nanostripper with Fast5s input
-        if ( params.nanostripper ) {
+        } else {
             // First check if barcoded
             barcodedFast5 = file("${params.fast5_directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
             nonBarcodedFast5 = file("${params.fast5_directory}/*.fast5", type: 'file', maxDepth: 1)
@@ -113,32 +137,6 @@ workflow {
                 println('Unable to figure out input')
                 System.exit(1)
             }
-
-        // Minimap2 with Fastqs input
-        } else {
-            // First check if barcoded or not, need to 
-            barcodedFastq = file("${params.fastq_directory}/*{barcode,unclassified}*", type: 'dir', maxDepth: 1)
-            nonBarcodedFastq = file("${params.fastq_directory}/*.fastq*", type: 'file', maxDepth: 1)
-            if ( barcodedFastq ) {
-                Channel.fromPath( barcodedFastq )
-                    .filter{ d ->
-                                def count = 0
-                                for (x in d.listFiles()) {
-                                    if (x.isFile()) {
-                                        count += 1
-                                    }
-                                }
-                                count > 0
-                    }.set{ ch_fastq }
-            
-            } else if ( nonBarcodedFastq ) {
-                Channel.fromPath( nonBarcodedFastq )
-                    .set{ ch_fastq }
-            } else {
-                println('Unable to figure out input')
-                System.exit(1)
-            }
-            nanoporeMinimap2Dehosting(ch_fastq, ch_HumanReference, ch_CovidReference)
         }
     }
 }

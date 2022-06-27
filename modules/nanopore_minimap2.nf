@@ -33,7 +33,7 @@ process fastqSizeSelection_MM2 {
     sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
     
     // Fastq input can either be a directory or a set of fastq files
-    //  Outputs are the same then after
+    //  Outputs are the same then after allowing a hopefully streamlined pipeline
     if ( fastq.isDirectory() ) {
         """
         artic guppyplex --min-length ${params.min_length} --max-length ${params.max_length} --prefix ${sampleName}_size_selected --directory $fastq

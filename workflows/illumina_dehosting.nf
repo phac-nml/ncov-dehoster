@@ -1,8 +1,4 @@
 // Illumina dehosting workflow
-
-// Enable dsl2
-nextflow.enable.dsl = 2
-
 // Import modules
 include {
   generateCompositeReference;
@@ -12,7 +8,7 @@ include {
   dehostBamFiles;
   generateDehostedReads;
   combineCSVs
-  } from '../modules/illumina.nf'
+} from '../modules/illumina.nf'
 
 // Workflow
 workflow illuminaDehosting {
@@ -23,17 +19,17 @@ workflow illuminaDehosting {
 
     main:
 
+    // Always need to make the composite reference, even if an index is given
+    // This might lead to issues if the composite index given does match the generated reference but we will watch for that and re-visit it later
     generateCompositeReference(ch_HumanReference, 
                                 ch_CovidReference)
 
     if ( params.composite_bwa_index ){
       grabCompositeIndex("${params.composite_bwa_index}")
-
       grabCompositeIndex.out
               .set{ ch_index }
     } else {
       indexCompositeReference(generateCompositeReference.out)
-
       indexCompositeReference.out.collect()
               .set{ ch_index }
     }
