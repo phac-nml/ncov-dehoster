@@ -45,7 +45,7 @@ def helpStatement() {
             --fast5_directory [path]            Path to fast5 directories associated with the data
             --composite_minimap2_index [file]   Path to composite minimap2 .mmi file to speed up analysis
             --keep_ref_id [str]                 String name of reference contig ID to keep during host removal (Default: 'MN908947.3')
-            --min_length [i]                    Minimum length of fastq reads to keep (Default: 400)
+            --min_length [i]                    Minimum length of fastq reads to keep (Default: 350)
             --max_length [i]                    Maximum length of fastq reads to keep (Default: 2400)
             --min_read_count [i]                Minimum read count required to output results (Default: 1)
             --flat                              Flag to flatten fastq output from named dirs to flat files in the output fastq_pass dir

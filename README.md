@@ -128,12 +128,12 @@ Minimum computational specs required for the minimap2 nanopore fastq host remova
 Run the full *Nanopore Nanostripper* pipeline with the following command:
 
 ```
-nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --nanostripper --fast5_directory <path/to/fast5_pass/> --human_ref <path/to/reference> --run_name 'whatever_you_want' --guppyCPU </path/to/conda_env/guppy-4.0.11-cpu/>
+nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --nanostripper --fast5_directory <path/to/fast5_pass/> --human_ref <path/to/reference> --run_name 'whatever_you_want' --guppyCPU </path/to/conda_env/guppy-cpu/> --guppyGPU </path/to/conda_env/guppy-gpu/>
 ```
 
 You can also just generate dehosted fast5 files with nanostripper with no guppy environment specified. Guppy is proprietary software of ONT Technologies so you must create your own environment for it
 
-Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory. GPU highly recommended to run or it will take >12 hours.
+Minimum computational specs required for the Nanopore dehosting pipeline are 16+ cpu and 68+G memory. Configuring a GPU is highly recommended to run basecalling or the pipeline will take >12 hours to run the basecalling step (with a GPU it will be about 1-4 hours).
 
 ------
 
@@ -325,7 +325,7 @@ Full instructions on how to easily install and run the Nanopore Minimap2 fastq d
     - Demultiplex the data using [guppy_barcoder](https://community.nanoporetech.com) (proprietary from ONT) and the `--require_barcodes_both_ends` flag to make sure that barcodes are present on each end of the reads.
         - There are some spots in the genome where this helps in resolution when analyzing the data
     
-    - **Note** that the output fastq files are not able to be demultiplexed anymore
+    - **Note** that the output fastq files are not able to be demultiplexed anymore so if you wish to strictly demultiplex the data it is advised to do it before running this host-removal pipeline.
         - May be able to be fixed in a later version
 
 3. Ensure nextflow is available and then run the pipeline
@@ -624,7 +624,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
 
 Profiles are a set of configuration attributes that can be activated (as many as you want as long as they are comma separated) when launching a pipeline. More information can be found [here](https://www.nextflow.io/docs/latest/config.html?highlight=profile#config-profiles)
 
-If no profile is given, the Illumina pipeline will still function correctly and will run locally so long as the system has all of the dependencies installed and meets the computational requirements for the processes. The nanopore pipeline currently requires a guppy conda environment to re-basecall and demultiplex the fast5 files
+If no profile is given, the Illumina and nanopore minimap2 pipelines will still function correctly and will run all processes locally so long as the system has all of the dependencies installed and meets the computational requirements. The nanopore nanostripper pipeline currently requires a guppy conda environment to re-basecall and demultiplex the fast5 files.
 
 Profiles can be activated with `-profile <profile_name>`. Below are the profiles currently available with this pipeline
 
