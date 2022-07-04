@@ -38,11 +38,18 @@ process indexCompositeReference {
     path(composite_ref)
 
     output:
-    file("*.fa*")
+    path("*.fa*"), emit: index
+    path("*.process.yml"), emit: versions
 
     script:
     """
     bwa index -a bwtsw $composite_ref
+
+    # Versions #
+    cat <<-END_VERSIONS > indexbwa.process.yml
+        "${task.process}":
+            bwa: \$(echo \$(bwa 2> >(grep -o 'Version' | cut -d ' ' -f 2)))
+    END_VERSIONS
     """
 }
 
@@ -55,12 +62,21 @@ process compositeMappingBWA {
 
     output:
     tuple val(sampleName), path("${sampleName}.sorted.bam"), emit: bam
-    path("${sampleName}.flagstats.txt")
+    path("${sampleName}.flagstats.txt"), emit: flagstats
+    path("*.process.yml"), emit: versions
 
     script:
+    processThreads = task.cpus * 2
     """
-    bwa mem -t ${params.illumina_threads} ${composite_reference} ${forward} ${reverse} | samtools sort --threads ${params.illumina_threads} -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    bwa mem -t ${processThreads} ${composite_reference} ${forward} ${reverse} | samtools sort --threads ${task.cpus} -T "temp" -O BAM -o ${sampleName}.sorted.bam
     samtools flagstat ${sampleName}.sorted.bam > ${sampleName}.flagstats.txt
+
+    # Versions #
+    cat <<-END_VERSIONS > mapbwa.process.yml
+        "${task.process}":
+            bwa: \$(echo \$(bwa 2> >(grep -o 'Version' | cut -d ' ' -f 2)))
+            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
+    END_VERSIONS
     """
 }
 
@@ -76,6 +92,7 @@ process dehostBamFiles {
     output:
     tuple val(sampleName), path("${sampleName}.dehosted.bam"), emit: bam
     path "${sampleName}*.csv", emit: csv
+    path("*.process.yml"), emit: versions
 
     script:
 
@@ -84,11 +101,18 @@ process dehostBamFiles {
     """
     samtools index ${composite_bam}
     dehost_illumina.py --file ${composite_bam} \
-    --keep_id ${params.covid_ref_id} \
+    --keep_id ${params.keep_ref_id} \
     -q ${params.keep_min_map_quality} \
     -Q ${params.remove_min_map_quality} \
     -o ${sampleName}.dehosted.bam \
     -R ${rev} 
+
+    # Versions #
+    cat <<-END_VERSIONS > dehostbam.process.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
+            dehost_illumina.py: 0.1.0
+    END_VERSIONS
     """
 }
 
@@ -102,11 +126,18 @@ process generateDehostedReads {
     tuple( val(sampleName), path(dehosted_bam))
 
     output:
-    path("${sampleName}_dehosted_R*")
+    path("${sampleName}_dehosted_R*"), emit: dehosted_fastq
+    path("*.process.yml"), emit: versions
 
     script:
     """
     samtools fastq -1 ${sampleName}_dehosted_R1.fastq.gz -2 ${sampleName}_dehosted_R2.fastq.gz ${dehosted_bam}
+
+    # Versions #
+    cat <<-END_VERSIONS > index.process.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
+    END_VERSIONS
     """
 }
 
@@ -119,10 +150,17 @@ process combineCSVs {
     path(csvs)
 
     output:
-    path("removal_summary.csv")
+    path("removal_summary.csv"), emit: summary
+    path("*.process.yml"), emit: versions
 
     script:
     """
     csvtk concat *_stats.csv > removal_summary.csv
+
+    # Versions #
+    cat <<-END_VERSIONS > csv.process.yml
+        "${task.process}":
+            csvtk: \$(echo \$(csvtk version | sed 's/csvtk //'))
+    END_VERSIONS
     """
 }
