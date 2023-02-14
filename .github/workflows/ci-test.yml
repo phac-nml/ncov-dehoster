@@ -47,6 +47,12 @@ jobs:
     - name: List Files
       run: |
         ls -al ${{ github.workspace }}
+    # Unzip fast5s to run
+    - name: Unzip fasta file
+      run: |
+        cd .github/data/
+        gunzip partial_hg38_ref.fa.gz
+        cd -
     # Run Help Command
     - name: Pipeline Help CMD
       run: |
