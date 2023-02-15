@@ -7,8 +7,8 @@ on:
   pull_request: # Run on all pull requests
   push:
     branches: master
-  schedule: # Run master weekly on Monday
-    - cron: 0 6 5 * *
+  schedule: # Run master at 6am once a month
+    - cron: 0 6 10 * *
       branches: master
 
 jobs:
@@ -47,7 +47,7 @@ jobs:
     - name: List Files
       run: |
         ls -al ${{ github.workspace }}
-    # Unzip fast5s to run
+    # Unzip ref to run
     - name: Unzip fasta file
       run: |
         cd .github/data/
@@ -57,10 +57,10 @@ jobs:
     - name: Pipeline Help CMD
       run: |
         nextflow run ./main.nf --help
-    # Actual Pipelines
-    - name: Run Nextflow Nanopore Minimap2 Pipeline
-      run: bash .github/scripts/run_nanopore_pipeline.sh
+    # Actual Pipelines - Illumina first as the artic env has issues being created sometimes
     - name: Run Nextflow Illumina Pipeline
       run: bash .github/scripts/run_illumina_pipeline.sh
+    - name: Run Nextflow Nanopore Minimap2 Pipeline
+      run: bash .github/scripts/run_nanopore_pipeline.sh
     - name: Done
       run: echo "Done"

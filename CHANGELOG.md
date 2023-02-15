@@ -2,6 +2,7 @@
 ----------------
 General Developer Changes:
 - Changed how conda is implemented to match nextflow version updates
+- Fixed tests
 
 ## Version 0.2.0
 ----------------

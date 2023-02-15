@@ -1,11 +1,8 @@
-#!/bin/bash
+#!/bin/env/usr bash
 set -eo pipefail
 
 # Create a Cache Dir
 mkdir -p conda_cache_dir
-
-# Workaround for mamba-org/mamba#488
-rm -f /usr/share/miniconda/pkgs/cache/*.json
 
 # Run Flat Pipeline
 nextflow run ./main.nf \
@@ -34,6 +31,6 @@ nextflow run ./main.nf \
 
 # Reset and Track
 mv .nextflow.log artifacts/minimap2_expanded.nextflow.log
-rm -rf results work/ .nextflow* partial_hg38_ref.fa
+rm -rf results work/ .nextflow*
 
 echo "Done"
