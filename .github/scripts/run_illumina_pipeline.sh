@@ -1,4 +1,4 @@
-#!/bin/env/usr bash
+#!/bin/bash
 set -eo pipefail
 
 # Create a Cache Dir
