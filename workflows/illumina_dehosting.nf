@@ -10,7 +10,7 @@ include {
   combineCSVs
 } from '../modules/illumina.nf'
 
-include { outputVersionsIllumina } from '../modules/versions.nf'
+include { outputVersions } from '../modules/versions.nf'
 
 // Workflow
 workflow illuminaDehosting {
@@ -56,5 +56,5 @@ workflow illuminaDehosting {
     ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
     ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
     ch_versions = ch_versions.mix(combineCSVs.out.versions)
-    outputVersionsIllumina(ch_versions.collect())
+    outputVersions(ch_versions.collect())
 }

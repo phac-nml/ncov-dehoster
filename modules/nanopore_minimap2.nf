@@ -121,32 +121,12 @@ process removeHumanReads {
 }
 
 process regenerateFastqFiles {
-    publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}", pattern: "*.host_removed.fastq", mode: "copy"
-
-    label 'smallCPU'
-    tag { sampleName }
-
-    input:
-    tuple val(sampleName), path(dehosted_bam)
-
-    output:
-    tuple val(sampleName), file("${sampleName}.host_removed.fastq"), emit: dehosted_fastq
-    path("*.process.yml"), emit: versions
-
-    script:
-    """
-    samtools fastq $dehosted_bam > ${sampleName}.host_removed.fastq
-
-    # Versions #
-    cat <<-END_VERSIONS > dehostedfastq.process.yml
-        "${task.process}":
-            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
-    END_VERSIONS
-    """
-}
-
-process regenerateFastqFilesFlat {
-    publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/", pattern: "*.host_removed.fastq", mode: "copy"
+    // Output format changes based on input
+    if ( params.flat ) {
+        publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/", pattern: "*.host_removed.fastq", mode: "copy"
+    } else {
+        publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}", pattern: "*.host_removed.fastq", mode: "copy"
+    }
 
     label 'smallCPU'
     tag { sampleName }

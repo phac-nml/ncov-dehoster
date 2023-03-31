@@ -7,11 +7,10 @@ include {
   compositeMappingMM2;
   removeHumanReads;
   regenerateFastqFiles;
-  regenerateFastqFilesFlat;
   regenerateFast5s_MM2
 } from '../modules/nanopore_minimap2.nf'
 
-include { outputVersionsNanopore } from '../modules/versions.nf'
+include { outputVersions } from '../modules/versions.nf'
 
 // From nanostripper pipeline
 include {
@@ -58,22 +57,13 @@ workflow nanoporeMinimap2Dehosting {
 
     removeHumanReads(compositeMappingMM2.out.comp_bam)
 
-    // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
-    if ( params.flat ) {
-      regenerateFastqFilesFlat(removeHumanReads.out.bam)
-      regenerateFastqFilesFlat.out.dehosted_fastq
-                              .filter{ it[1].countFastq() >= params.min_read_count }
-                              .set { ch_host_rm_fastq }
+    // Remake fastq files, output either flat or normal based on CL arg, and filter based on min read count
+    regenerateFastqFiles(removeHumanReads.out.bam)
+    regenerateFastqFiles.out.dehosted_fastq
+                            .filter{ it[1].countFastq() >= params.min_read_count }
+                            .set { ch_host_rm_fastq }
 
-      ch_versions = ch_versions.mix(regenerateFastqFilesFlat.out.versions.first())
-    } else {
-      regenerateFastqFiles(removeHumanReads.out.bam)
-      regenerateFastqFiles.out.dehosted_fastq
-                          .filter{ it[1].countFastq() >= params.min_read_count }
-                          .set { ch_host_rm_fastq }
-
-      ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
-    }
+    ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
     // This process is slow without a lot of computational support behind it however; so its optional
@@ -95,10 +85,10 @@ workflow nanoporeMinimap2Dehosting {
     ch_versions = ch_versions.mix(compositeMappingMM2.out.versions.first())
     ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
     ch_versions = ch_versions.mix(combineCSVs.out.versions)
-    outputVersionsNanopore(ch_versions.collect())
+    outputVersions(ch_versions.collect())
 }
 
-// Workflow Nanostripper - NOT MAINTAINED AT THE MOMENT!!!//
+// Workflow Nanostripper - !!!NOT MAINTAINED AT THE MOMENT!!!//
 workflow nanoporeNanostripperDehosting {
     take:
       ch_fast5
