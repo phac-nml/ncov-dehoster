@@ -7,41 +7,60 @@ on:
   pull_request: # Run on all pull requests
   push:
     branches: master
-  schedule: # Run master weekly on Monday
-    - cron: 0 6 5 * *
+  schedule: # Run master at 6am once a month
+    - cron: 0 6 10 * *
       branches: master
 
 jobs:
   pipeline-test:
     name: ncov-dehoster workflow test
     runs-on: ubuntu-latest
+    # For conda
+    defaults:
+      run:
+        shell: bash -el {0}
 
     steps:
+    # Setup repo
     - uses: actions/checkout@v3
     - name: Create artifacts dir
       run: mkdir -p artifacts
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v3
-      with: 
-        python-version: 3.9
-    - name: Add Conda to system
+    
+    # Add conda, mamba, and nextflow
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v2.2.0
+      with:
+        miniconda-version: "latest"
+        activate-environment: nextflow
+        python-version: 3.8
+        mamba-version: "*"
+        use-mamba: true
+        channels: conda-forge,bioconda,defaults
+    - name: Install Nextflow
       run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
-    - name: Install Nextflow and Mamba
-      run: |
-        conda update -n base -c defaults conda
-        conda install -c conda-forge -c bioconda -c defaults mamba nextflow
-        rm -f /usr/share/miniconda/pkgs/cache/*.json # workaround for mamba-org/mamba#488
+        mamba install nextflow
     - name: Nextflow Version
       run: | 
         nextflow -v
+        conda --version
+    # Check how repo looks incase there is an issue
     - name: List Files
       run: |
         ls -al ${{ github.workspace }}
-    - name: Run Nextflow Nanopore Minimap2 Pipeline
-      run: bash .github/scripts/run_nanopore_pipeline.sh
+    # Unzip ref to run
+    - name: Unzip fasta file
+      run: |
+        cd .github/data/
+        gunzip partial_hg38_ref.fa.gz
+        cd -
+    # Run Help Command
+    - name: Pipeline Help CMD
+      run: |
+        nextflow run ./main.nf --help
+    # Actual Pipelines - Illumina first as the artic env has issues being created sometimes
     - name: Run Nextflow Illumina Pipeline
       run: bash .github/scripts/run_illumina_pipeline.sh
+    - name: Run Nextflow Nanopore Minimap2 Pipeline
+      run: bash .github/scripts/run_nanopore_pipeline.sh
     - name: Done
       run: echo "Done"

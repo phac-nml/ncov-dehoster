@@ -1,50 +1,70 @@
-#!/bin/bash
+#!/bin/env/usr bash
 set -eo pipefail
 
 # Create a Cache Dir
 mkdir -p conda_cache_dir
-mkdir -p nanopore_fastq
 
-# Get Datasets
-# Covid minimap2 index (not using composite ref due to size, will work without just for the testing)
-wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/minimap2/sars-cov-2_ref.mmi
-# Get partial human genome
-wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/partial_human_ref/partial_hg38_ref.fa.gz
-gunzip partial_hg38_ref.fa.gz
-# Small fastq files
-wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/nanopore_fastq/nanopore-1.fastq.gz -P ./nanopore_fastq
-wget https://raw.githubusercontent.com/DarianHole/test-datasets/master/nanopore_fastq/nanopore-2.fastq.gz -P ./nanopore_fastq
-
-# Workaround for mamba-org/mamba#488
-rm -f /usr/share/miniconda/pkgs/cache/*.json
-
-# Run Flat Pipeline
+### Run Flat Pipeline ###
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \
     --nanopore \
     --minimap2 \
-    --fastq_directory $PWD/nanopore_fastq \
+    --fastq_directory $PWD/.github/data/nanopore/ \
     --run_name 'test-1-minimap2-flat' \
     --flat \
-    --composite_minimap2_index $PWD/sars-cov-2_ref.mmi
+    --composite_minimap2_index $PWD/.github/data/minimap2_index/sars-cov-2_ref.mmi
+
+### Check Outputs ###
+# 1. Num Poor Reads
+READS=`awk -F, '$1 == "nanopore-1" {print $3}' ./results/test-1-minimap2-flat/removal_summary.csv`
+if [[ "$READS" != "2" ]]; then 
+    echo "Incorrect output: Number of poor reads found"
+    echo "  Expected: 2, Got: $READS"
+    exit 1
+fi
+
+# 2. Total Reads Kept
+READS=`awk -F, '$1 == "nanopore-2" {print $4}' ./results/test-1-minimap2-flat/removal_summary.csv`
+if [[ "$READS" != "2013" ]]; then 
+    echo "Incorrect output: Number of human reads found"
+    echo "  Expected: 2013, Got: $READS"
+    exit 1
+fi
 
 # Reset and Track
 mv .nextflow.log artifacts/minimap2_flat.nextflow.log
 rm -rf results work/ .nextflow*
 
-# Run non-flat and test for cache dir working and human ref working
+### Run non-flat and test for cache dir working and human ref working ###
 nextflow run ./main.nf \
     -profile conda,test \
     --cache ./conda_cache_dir \
     --nanopore \
     --minimap2 \
-    --fastq_directory $PWD/nanopore_fastq \
+    --fastq_directory $PWD/.github/data/nanopore/ \
     --run_name 'test-2-minimap2-partial-human' \
-    --human_ref $PWD/partial_hg38_ref.fa
+    --human_ref $PWD/.github/data/partial_hg38_ref.fa
+
+### Check Outputs ###
+# 1. Num Poor Reads
+READS=`awk -F, '$1 == "nanopore-1" {print $3}' ./results/test-2-minimap2-partial-human/removal_summary.csv`
+if [[ "$READS" != "2" ]]; then 
+    echo "Incorrect output: Number of poor reads found"
+    echo "  Expected: 2, Got: $READS"
+    exit 1
+fi
+
+# 2. Total Reads Kept
+READS=`awk -F, '$1 == "nanopore-2" {print $4}' ./results/test-2-minimap2-partial-human/removal_summary.csv`
+if [[ "$READS" != "2013" ]]; then 
+    echo "Incorrect output: Number of human reads found"
+    echo "  Expected: 2013, Got: $READS"
+    exit 1
+fi
 
 # Reset and Track
 mv .nextflow.log artifacts/minimap2_expanded.nextflow.log
-rm -rf results work/ .nextflow* partial_hg38_ref.fa
+rm -rf results work/ .nextflow*
 
 echo "Done"
