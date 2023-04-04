@@ -1,11 +1,9 @@
 process seqtkSubsample {
-    if ( params.illumina ) {
-        publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "*.fastq.gz", mode: "copy"
-    } else if ( params.flat ) {
-        publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/", pattern: "*.fastq.gz", mode: "copy"
-    } else {
-        publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}", pattern: "*.fastq.gz", mode: "copy"
-    }
+    publishDir = [
+        path: { (params.illumina ? "${params.outdir}/dehosted_paired_fastqs" : params.flat ? "${params.outdir}/${params.run_name}/run/fastq_pass/" : "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}") },
+        pattern: "*.fastq*",
+        mode: "copy"
+    ]
 
     tag { sampleName }
     label 'smallCPU'
@@ -17,25 +15,27 @@ process seqtkSubsample {
     val(sample_size)
 
     output:
-    tuple val(sampleName), path("*.fastq.gz"), emit: reads
+    tuple val(sampleName), path("*.fastq*"), emit: reads
     path "versions.yml", emit: versions
 
     script:
     if ( params.illumina ) {
         MID_EXT = "_downsampled"
+        GZIP_ARG = "| gzip --no-name"
     } else {
         MID_EXT = ".downsampled"
+        GZIP_ARG = ""
     }
     """
     for f in $reads;
     do
         FINAL_EXT=\$(echo \$f | sed 's/${sampleName}//')
-        seqtk \
-            sample \
-            -s ${params.downsample_seed} \
-            \$f \
-            $sample_size \
-        | gzip --no-name \
+        seqtk \\
+            sample \\
+            -s ${params.downsample_seed} \\
+            \$f \\
+            $sample_size \\
+        $GZIP_ARG \\
         > ${sampleName}${MID_EXT}\$FINAL_EXT
     done
 

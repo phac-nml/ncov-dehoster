@@ -104,9 +104,7 @@ process removeHumanReads {
     path("*.process.yml"), emit: versions
 
     script:
-
     def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
-
     """
     samtools index $sorted_bam
     dehost_nanopore.py --file $sorted_bam --min_reads ${params.min_read_count} --keep_id ${params.keep_ref_id} --output ${sampleName}.host_removed.sorted.bam --revision ${rev}
@@ -121,7 +119,13 @@ process removeHumanReads {
 }
 
 process regenerateFastqFiles {
-    publishDir "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}", pattern: "*.host_removed.fastq", mode: "copy"
+    if ( !params.downsample ) {
+        publishDir = [
+            path: { (params.flat ? "${params.outdir}/${params.run_name}/run/fastq_pass/" : "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}") },
+            pattern: "*.host_removed.fastq",
+            mode: "copy"
+        ]
+    }
 
     label 'smallCPU'
     tag { sampleName }

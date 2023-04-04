@@ -7,10 +7,10 @@ include {
   compositeMappingMM2;
   removeHumanReads;
   regenerateFastqFiles;
-  regenerateFastqFilesFlat;
   regenerateFast5s_MM2
 } from '../modules/nanopore_minimap2.nf'
 
+include { seqtkSubsample } from '../modules/general.nf'
 include { outputVersions } from '../modules/versions.nf'
 
 // From nanostripper pipeline
@@ -59,19 +59,20 @@ workflow nanoporeMinimap2Dehosting {
     removeHumanReads(compositeMappingMM2.out.comp_bam)
 
     // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
-    if ( params.flat ) {
-      regenerateFastqFilesFlat(removeHumanReads.out.bam)
-      regenerateFastqFilesFlat.out.dehosted_fastq
-                              .filter{ it[1].countFastq() >= params.min_read_count }
-                              .set { ch_host_rm_fastq }
-      ch_versions = ch_versions.mix(regenerateFastqFilesFlat.out.versions.first())
-    } else {
-      regenerateFastqFiles(removeHumanReads.out.bam)
-      regenerateFastqFiles.out.dehosted_fastq
-                          .filter{ it[1].countFastq() >= params.min_read_count }
-                          .set { ch_host_rm_fastq }
+    regenerateFastqFiles(removeHumanReads.out.bam)
+    regenerateFastqFiles.out.dehosted_fastq
+                        .filter{ it[1].countFastq() >= params.min_read_count }
+                        .set { ch_host_rm_fastq }
 
-      ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
+    ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
+
+    // Downsampling
+    if ( params.downsample ) {
+      seqtkSubsample(ch_host_rm_fastq, params.downsample_count)
+      ch_final_fastq = seqtkSubsample.out.reads
+      ch_versions = ch_versions.mix(seqtkSubsample.out.versions.first())
+    } else {
+      ch_final_fastq = ch_host_rm_fastq
     }
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
@@ -79,7 +80,7 @@ workflow nanoporeMinimap2Dehosting {
     if ( params.fast5_directory ) {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
-      regenerateFast5s_MM2(ch_host_rm_fastq.combine(ch_Fast5))
+      regenerateFast5s_MM2(ch_final_fastq.combine(ch_Fast5))
 
       ch_versions = ch_versions.mix(regenerateFast5s_MM2.out.versions.first())
 
