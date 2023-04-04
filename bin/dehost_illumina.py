@@ -21,6 +21,9 @@ def init_parser():
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=0, help='Minimum quality of the reads to be included in removal')
     parser.add_argument('-o', '--output', required=False, default='out.bam', help='Output BAM name')
     parser.add_argument('-R', '--revision', required=False, default='NA', help='Pass a pipeline commit hash to keep track of what version was ran')
+    parser.add_argument('--downsampled', required=False, action='store_true', help='Pass if data is downsampled')
+    parser.add_argument('--downsampled_count', required=False, type=int, default=100000, help='Maximum count of reads to keep when downsampling')
+    parser.add_argument('--downsampled_seed', required=False, type=int, default=100, help='Downsample seed used')
 
     return parser
 
@@ -106,17 +109,33 @@ def main():
 
     generate_dehosted_output(read_list, header, args.output)
 
-    if len(read_list) == 0:
+    paired_reads_kept = len(read_list)
+    if paired_reads_kept == 0:
         percentage_kept = 0
     else:
-        percentage_kept = len(read_list)/(human_filtered_count + poor_quality_count + len(read_list)) * 100
+        percentage_kept = paired_reads_kept/(human_filtered_count + poor_quality_count + len(read_list)) * 100
 
-    line = {    'sample' : sample_name,
-                'human_reads_filtered' : human_filtered_count, 
-                'poor_quality_reads_filtered' : poor_quality_count,
-                'paired_reads_kept' : len(read_list),
-                'percentage_kept' : "{:.2f}".format(percentage_kept),
-                'github_commit' : args.revision}
+    # Output based on if downsampled or not
+    if args.downsampled:
+        if paired_reads_kept > args.downsampled_count:
+            paired_reads_kept = args.downsampled_count
+            percentage_kept = paired_reads_kept/(human_filtered_count + poor_quality_count + len(read_list)) * 100
+
+        line = {    'sample' : sample_name,
+                    'human_reads_filtered' : human_filtered_count, 
+                    'poor_quality_reads_filtered' : poor_quality_count,
+                    'paired_reads_kept' : paired_reads_kept,
+                    'percentage_kept' : "{:.2f}".format(percentage_kept),
+                    'downsample_maximum' : args.downsampled_count,
+                    'downsample_seed' : args.downsampled_seed,
+                    'github_commit' : args.revision}
+    else:
+        line = {    'sample' : sample_name,
+                    'human_reads_filtered' : human_filtered_count, 
+                    'poor_quality_reads_filtered' : poor_quality_count,
+                    'paired_reads_kept' : paired_reads_kept,
+                    'percentage_kept' : "{:.2f}".format(percentage_kept),
+                    'github_commit' : args.revision}
 
     with open('{}_stats.csv'.format(sample_name), 'w') as csvfile:
         header = line.keys()

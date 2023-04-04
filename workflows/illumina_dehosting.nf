@@ -10,6 +10,7 @@ include {
   combineCSVs
 } from '../modules/illumina.nf'
 
+include { seqtkSubsample } from '../modules/general.nf'
 include { outputVersions } from '../modules/versions.nf'
 
 // Workflow
@@ -29,7 +30,7 @@ workflow illuminaDehosting {
     generateCompositeReference(ch_HumanReference, 
                                 ch_CovidReference)
 
-    if ( params.composite_bwa_index ){
+    if ( params.composite_bwa_index ) {
       grabCompositeIndex("${params.composite_bwa_index}")
       grabCompositeIndex.out
               .set{ ch_index }
@@ -44,17 +45,23 @@ workflow illuminaDehosting {
     compositeMappingBWA(ch_fastqs
                         .combine(generateCompositeReference.out),
                       ch_index)
+    ch_versions = ch_versions.mix(compositeMappingBWA.out.versions.first())
 
     dehostBamFiles(compositeMappingBWA.out.bam)
+    ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
 
     generateDehostedReads(dehostBamFiles.out.bam)
+    ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
+
+    // Downsampling
+    if ( params.downsample ) {
+      seqtkSubsample(generateDehostedReads.out.dehosted_fastq, params.downsample_count)
+      ch_versions = ch_versions.mix(seqtkSubsample.out.versions.first())
+    }
 
     combineCSVs(dehostBamFiles.out.csv.collect())
-
-    // Version Tracking and Output
-    ch_versions = ch_versions.mix(compositeMappingBWA.out.versions.first())
-    ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
-    ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
     ch_versions = ch_versions.mix(combineCSVs.out.versions)
-    outputVersions(ch_versions.collect())
+
+    // Version Tracking Output
+    outputVersions(ch_versions.collectFile(name: 'tool_versions.yml'))
 }

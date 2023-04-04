@@ -13,6 +13,6 @@ process outputVersions {
     def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
     """
     echo '"ncov-dehoster-${rev}":' > process_versions.yml
-    cat *.process.yml >> process_versions.yml
+    cat $versions >> process_versions.yml
     """
 }
