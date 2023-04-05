@@ -20,6 +20,9 @@ def init_parser():
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=10, help='Minimum quality of the reads to be included in removal. Default: 10')
     parser.add_argument('-o', '--output', required=False, default='out.bam', help='Output BAM name')
     parser.add_argument('-R', '--revision', required=False, default='NA', help='Pass a pipeline commit hash to keep track of what version was ran')
+    parser.add_argument('--downsampled', required=False, action='store_true', help='Pass if data is downsampled')
+    parser.add_argument('--downsampled_count', required=False, type=int, default=100000, help='Maximum count of reads to keep when downsampling')
+    parser.add_argument('--downsampled_seed', required=False, type=int, default=100, help='Downsample seed used')
 
     return parser
 
@@ -87,26 +90,42 @@ def main():
 
     # Keep reads based on input contig ID and mapping qualities given and then generate the output bam file using input files header with pysam
     keep_read_list, h_count, p_count, header = keep_reads_by_contig_id(args.file, args.keep_id, args.remove_minimum_quality, args.keep_minimum_quality)
-    if len(keep_read_list) >= args.min_reads:
+    kept_count = len(keep_read_list)
+    if kept_count >= args.min_reads:
         generate_dehosted_output(keep_read_list, header, args.output)
         output_generated = True
     else:
         output_generated = False
 
     # Set up the output CSV file for tracking
-    if len(keep_read_list) == 0:
+    if kept_count == 0:
         percentage_kept = 0
     else:
-        percentage_kept = len(keep_read_list)/(h_count + p_count + len(keep_read_list)) * 100
+        percentage_kept = kept_count/(h_count + p_count + kept_count) * 100
 
-    line = {    'sample' : sample_name,
-                'human_reads_filtered' : h_count, 
-                'poor_quality_reads_filtered' : p_count,
-                'reads_kept' : len(keep_read_list),
-                'percentage_kept' : "{:.2f}".format(percentage_kept),
-                'meets_count_filter' : output_generated,
-                'github_commit' : args.revision
-            }
+    # Output based on if downsampled or not
+    if args.downsampled:
+        if kept_count > args.downsampled_count:
+            kept_count = args.downsampled_count
+            percentage_kept = kept_count/(h_count + p_count + kept_count) * 100
+
+        line = {    'sample' : sample_name,
+                    'human_reads_filtered' : h_count, 
+                    'poor_quality_reads_filtered' : p_count,
+                    'reads_kept' : kept_count,
+                    'percentage_kept' : "{:.2f}".format(percentage_kept),
+                    'downsample_maximum_reads' : args.downsampled_count,
+                    'downsample_seed' : args.downsampled_seed,
+                    'github_commit' : args.revision}
+    else:
+        line = {    'sample' : sample_name,
+                    'human_reads_filtered' : h_count, 
+                    'poor_quality_reads_filtered' : p_count,
+                    'reads_kept' : kept_count,
+                    'percentage_kept' : "{:.2f}".format(percentage_kept),
+                    'meets_count_filter' : output_generated,
+                    'github_commit' : args.revision
+                }
 
     # Write out the output CSV file
     with open('{}_stats.csv'.format(sample_name), 'w') as csvfile:

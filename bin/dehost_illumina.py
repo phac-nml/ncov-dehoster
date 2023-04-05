@@ -126,7 +126,7 @@ def main():
                     'poor_quality_reads_filtered' : poor_quality_count,
                     'paired_reads_kept' : paired_reads_kept,
                     'percentage_kept' : "{:.2f}".format(percentage_kept),
-                    'downsample_maximum' : args.downsampled_count,
+                    'downsample_maximum_reads' : args.downsampled_count,
                     'downsample_seed' : args.downsampled_seed,
                     'github_commit' : args.revision}
     else:

@@ -68,7 +68,8 @@ process compositeMappingBWA {
     script:
     processThreads = task.cpus * 2
     """
-    bwa mem -t ${processThreads} ${composite_reference} ${forward} ${reverse} | samtools sort --threads ${task.cpus} -T "temp" -O BAM -o ${sampleName}.sorted.bam
+    bwa mem -t ${processThreads} ${composite_reference} ${forward} ${reverse} \\
+        | samtools sort --threads ${task.cpus} -T "temp" -O BAM -o ${sampleName}.sorted.bam
     samtools flagstat ${sampleName}.sorted.bam > ${sampleName}.flagstats.txt
 
     # Versions #
@@ -105,13 +106,13 @@ process dehostBamFiles {
     downsample_args_final = downsample_args.join(" ")
     """
     samtools index ${composite_bam}
-    dehost_illumina.py \
-        $downsample_args_final \
-        --file ${composite_bam} \
-        --keep_id ${params.keep_ref_id} \
-        -q ${params.keep_min_map_quality} \
-        -Q ${params.remove_min_map_quality} \
-        -o ${sampleName}.dehosted.bam \
+    dehost_illumina.py \\
+        $downsample_args_final \\
+        --file ${composite_bam} \\
+        --keep_id ${params.keep_ref_id} \\
+        -q ${params.keep_min_map_quality} \\
+        -Q ${params.remove_min_map_quality} \\
+        -o ${sampleName}.dehosted.bam \\
         -R ${rev} 
 
     # Versions #
