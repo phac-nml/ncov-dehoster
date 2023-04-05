@@ -120,7 +120,7 @@ fi
 # 3. Check Formatting
 FILE_COUNT=`ls ./results/test-3-minimap2-partial-human-flat-down100/run/fastq_pass/ | grep fastq -c`
 if [[ "$FILE_COUNT" != "2" ]]; then 
-    echo "Incorrect output: Number of fastq directories does not appear to be correct"
+    echo "Incorrect output: Number of fastq files does not appear to be correct"
     echo "  Expected: 2, Got: $FILE_COUNT"
     exit 1
 fi

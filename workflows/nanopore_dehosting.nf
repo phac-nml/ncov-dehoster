@@ -52,11 +52,14 @@ workflow nanoporeMinimap2Dehosting {
     }
     
     fastqSizeSelection_MM2(ch_fastq)
+    ch_versions = ch_versions.mix(fastqSizeSelection_MM2.out.versions.first())
     
     compositeMappingMM2(fastqSizeSelection_MM2.out.fastq
                                            .combine(ch_CompReference))
+    ch_versions = ch_versions.mix(compositeMappingMM2.out.versions.first())
 
     removeHumanReads(compositeMappingMM2.out.comp_bam)
+    ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
 
     // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
     regenerateFastqFiles(removeHumanReads.out.bam)
@@ -89,13 +92,10 @@ workflow nanoporeMinimap2Dehosting {
 
     // Finally make CSV output
     combineCSVs(removeHumanReads.out.csv.collect())
+    ch_versions = ch_versions.mix(combineCSVs.out.versions)
 
     // Version Tracking and Output
-    ch_versions = ch_versions.mix(fastqSizeSelection_MM2.out.versions.first())
-    ch_versions = ch_versions.mix(compositeMappingMM2.out.versions.first())
-    ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
-    ch_versions = ch_versions.mix(combineCSVs.out.versions)
-    outputVersions(ch_versions.collect())
+    outputVersions(ch_versions.collectFile(name: 'tool_versions.yml'))
 }
 
 // Workflow Nanostripper - !!!NOT MAINTAINED AT THE MOMENT!!!//
