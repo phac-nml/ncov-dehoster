@@ -129,8 +129,13 @@ process removeHumanReads {
         --file $sorted_bam \\
         --min_reads ${params.min_read_count} \\
         --keep_id ${params.keep_ref_id} \\
-        --output ${sampleName}.host_removed.sorted.bam \\
+        --output ${sampleName}.host_removed.bam \\
         --revision ${rev}
+
+    # Sort if file made
+    if [ -f "${sampleName}.host_removed.bam" ]; then
+        samtools sort ${sampleName}.host_removed.bam > ${sampleName}.host_removed.sorted.bam
+    fi
 
     # Versions #
     cat <<-END_VERSIONS > versions.yml
@@ -142,7 +147,8 @@ process removeHumanReads {
 }
 
 process regenerateFastqFiles {
-    if ( !params.downsample ) {
+    // Output if we are not fastq downsampling
+    if ( !params.downsample || params.downsample_amplicons ) {
         publishDir = [
             path: { (params.flat ? "${params.outdir}/${params.run_name}/run/fastq_pass/" : "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}") },
             pattern: "*.host_removed.fastq",

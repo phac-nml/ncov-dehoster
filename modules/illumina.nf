@@ -82,7 +82,7 @@ process compositeMappingBWA {
 }
 
 process dehostBamFiles {
-    publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.bam", mode: "copy"
+    publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.sorted.bam", mode: "copy"
 
     label 'smallCPU'
     tag { sampleName }
@@ -91,7 +91,7 @@ process dehostBamFiles {
     tuple val(sampleName), path(composite_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.dehosted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.dehosted.sorted.bam"), emit: bam
     path("${sampleName}*.csv"), emit: csv
     path("versions.yml"), emit: versions
 
@@ -113,7 +113,8 @@ process dehostBamFiles {
         -q ${params.keep_min_map_quality} \\
         -Q ${params.remove_min_map_quality} \\
         -o ${sampleName}.dehosted.bam \\
-        -R ${rev} 
+        -R ${rev}
+    samtools sort ${sampleName}.dehosted.bam > ${sampleName}.dehosted.sorted.bam
 
     # Versions #
     cat <<-END_VERSIONS > versions.yml
@@ -125,7 +126,8 @@ process dehostBamFiles {
 }
 
 process generateDehostedReads {
-    if ( !params.downsample ) {
+    // Output if we are not fastq downsampling
+    if ( !params.downsample || params.downsample_amplicons ) {
         publishDir "${params.outdir}/dehosted_paired_fastqs", pattern: "*_dehosted_R*", mode: "copy"
     }
 

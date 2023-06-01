@@ -76,7 +76,7 @@ def generate_dehosted_output(read_list, keep_header, bamfile_out):
         - keep_header: Pysam AlignmentHeader from input BAM file
         - bamfile_out: String path to output file
     '''
-    with pysam.AlignmentFile(bamfile_out, "w", header=keep_header) as outfile:
+    with pysam.AlignmentFile(bamfile_out, "wb", header=keep_header) as outfile:
         for read in read_list:
             outfile.write(read)
 

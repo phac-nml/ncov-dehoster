@@ -10,7 +10,10 @@ include {
   regenerateFast5s_MM2
 } from '../modules/nanopore_minimap2.nf'
 
-include { seqtkSubsample } from '../modules/general.nf'
+include {
+  seqtkRandomSubsample ;
+  samtoolsAmpliconDownsample ;
+} from '../modules/general.nf'
 include { outputVersions } from '../modules/versions.nf'
 
 // From nanostripper pipeline
@@ -61,19 +64,36 @@ workflow nanoporeMinimap2Dehosting {
     removeHumanReads(compositeMappingMM2.out.comp_bam)
     ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
 
+    // Downsampling BAM with Amplicons
+    if ( params.downsample && params.downsample_amplicons ) {
+      samtoolsAmpliconDownsample(
+        removeHumanReads.out.bam,
+        file(params.downsample_amplicons, checkIfExists: true),
+        'nanopore',
+        params.downsample_count,
+        params.downsample_seed
+      )
+
+      ch_versions = ch_versions.mix(samtoolsAmpliconDownsample.out.versions.first())
+      ch_dehosted_bam = samtoolsAmpliconDownsample.out.bam
+    } else {
+      ch_dehosted_bam = removeHumanReads.out.bam
+    }
+
     // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
-    regenerateFastqFiles(removeHumanReads.out.bam)
+    regenerateFastqFiles(ch_dehosted_bam)
     regenerateFastqFiles.out.dehosted_fastq
                         .filter{ it[1].countFastq() >= params.min_read_count }
                         .set { ch_host_rm_fastq }
 
     ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
 
-    // Downsampling
-    if ( params.downsample ) {
-      seqtkSubsample(ch_host_rm_fastq, params.downsample_count)
-      ch_final_fastq = seqtkSubsample.out.reads
-      ch_versions = ch_versions.mix(seqtkSubsample.out.versions.first())
+    // Downsampling Fastq
+    if ( params.downsample && !params.downsample_amplicons ) {
+      seqtkRandomSubsample(ch_host_rm_fastq, params.downsample_count)
+
+      ch_versions = ch_versions.mix(seqtkRandomSubsample.out.versions.first())
+      ch_final_fastq = seqtkRandomSubsample.out.reads
     } else {
       ch_final_fastq = ch_host_rm_fastq
     }

@@ -1,8 +1,15 @@
 ## Version 0.3.0
 ----------------
+Additions:
+- Added downsampling and its params
+    - Random downsampling with seqtk
+    - Amplicon downsampling with samtools
+
 General Developer Changes:
 - Changed how conda is implemented to match nextflow version updates
 - Fixed tests
+- Changed logic on how --flat is works with nanopore dehosting
+    - No longer a different process module
 
 ## Version 0.2.0
 ----------------

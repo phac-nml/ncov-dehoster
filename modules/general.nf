@@ -1,4 +1,5 @@
-process seqtkSubsample {
+process seqtkRandomSubsample {
+    // Output logic for illumina and nanopore flat/normal structures
     publishDir = [
         path: { (params.illumina ? "${params.outdir}/dehosted_paired_fastqs" : params.flat ? "${params.outdir}/${params.run_name}/run/fastq_pass/" : "${params.outdir}/${params.run_name}/run/fastq_pass/${sampleName}") },
         pattern: "*.fastq*",
@@ -7,8 +8,6 @@ process seqtkSubsample {
 
     tag { sampleName }
     label 'smallCPU'
-
-    conda "bioconda::seqtk=1.3"
 
     input:
     tuple val(sampleName), path(reads)
@@ -27,6 +26,7 @@ process seqtkSubsample {
         GZIP_ARG = ""
     }
     """
+    # For loop to capture both nanopore and illumina reads
     for f in $reads;
     do
         FINAL_EXT=\$(echo \$f | sed 's/${sampleName}//')
@@ -43,6 +43,45 @@ process seqtkSubsample {
     cat <<-END_VERSIONS > versions.yml
         "${task.process}":
             seqtk: \$(echo \$(seqtk 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
+    END_VERSIONS
+    """
+}
+process samtoolsAmpliconDownsample {
+    publishDir "${params.outdir}/downsample_stats", pattern: "${sampleName}_region_counts.csv", mode: "copy"
+    tag { sampleName }
+    label 'smallCPU'
+
+    input:
+    tuple val(sampleName), path(bam)
+    path amplicons
+    val platform
+    val sample_size
+    val seed
+
+    output:
+    tuple val(sampleName), path("${sampleName}_downsampled.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}_region_counts.csv"), emit: csv
+    path "versions.yml", emit: versions
+
+    script:
+    """
+    # Get approximate per amplicon read count
+    perAmpliconReadCount=\$((${sample_size}/\$(wc -l ${amplicons} | cut -f1 -d' ')))
+
+    # Run
+    samtools index ${bam}
+    bash downsample_bam.sh \\
+        --bam ${bam} \\
+        -a ${amplicons} \\
+        -p ${platform} \\
+        --read-count \$perAmpliconReadCount \\
+        --seed ${seed} \\
+        --sample-name ${sampleName}
+
+    # Versions #
+    cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
     END_VERSIONS
     """
 }

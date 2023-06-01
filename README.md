@@ -3,9 +3,9 @@
 ## About:
 Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore sequencing data. Basic details for the three available pipelines are as follows:
 
-**Illumina Paired Pipeline \(v0.2.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
+**Illumina Paired Pipeline \(v0.3.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
 
-**Nanopore Minimap2 Fastq Pipeline \(v0.2.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
+**Nanopore Minimap2 Fastq Pipeline \(v0.3.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
 - Strict demultiplexing is *highly recommended* before running (unable to do so after and it improves downstream analyses)
 - Optional fast5 dehosting available with argument `--fast5_directory [dir]`
 
@@ -23,7 +23,7 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 
 [About](#about)
 
-[Changelog](#changelog)
+[Changelog](#changelog-highlights)
 
 [Dependencies and Data](#dependencies-and-data-required)
 - [Dependencies](#dependencies)
@@ -39,6 +39,8 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 - [Nanopore Fastq Minimap2 Dehosting and Regeneration Pipeline](#nanopore-fastq-minimap2-dehosting-and-regeneration-pipeline)
 - [Nanopore Fast5 Nanostripper Dehosting and Regeneration Pipeline (Developmental)](#nanopore-fast5-nanostripper-dehosting-and-regeneration-pipeline-developmental)
 
+[Downsampling](#downsampling)
+
 [Profiles](#profiles)
 
 [Other Notes](#other-notes)
@@ -46,6 +48,12 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 ------
 
 ## Changelog Highlights
+
+#### Release v0.3.0
+- Added in optional downsampling with `--downsample` and a set of optional parameters
+    - Random downsampling of final fastq reads with seqtk
+    - Amplicon based downsampling of bam file with samtools
+- Mamba added as its own profile
 
 #### Release v0.2.0
 - Better user parameter options
@@ -66,6 +74,7 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 - bwa
 - pysam
 - samtools
+- seqtk
 
 #### Nanopore Minimap2 Fastq Pipeline
 - artic
@@ -74,6 +83,8 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 - ont-fast5-api
 - pip
 - pysam
+- samtools
+- seqkt
 
 #### Nanopore Nanostripper Fast5 Pipeline
 - artic
@@ -163,6 +174,10 @@ Other arguments include:
 | keep_min_map_quality | Minimum mapping quality of covid reads to keep | 60 | No |
 | remove_min_map_quality | Minimum mapping quality of the human reads to remove | 0 | No |
 | composite_bwa_index | Directory containing BWA indexes for a composite human/viral reference --  **Speeds up analysis if given | None | Yes |
+| downsample | Turn on downsampling of reads with seqtk | False | Yes |
+| downsample_count | Approximate number of reads to be kept for each sample | 200,000 | Yes |
+| downsample_seed | Integer seed to use for downsampling | 101 | Yes |
+| downsample_amplicons | Utilize bed file to downsample sequencing amplicons with samtools | None | Yes |
 
 #### **Running**
 
@@ -304,7 +319,11 @@ Other arguments include:
 | min_read_count | Minimum read count required to output results | 1 | Yes
 | fast5_directory | Directory of run associated fast5 files to be dehosted | None | Yes |
 | keep_ref_id | Reference genome header id to keep | MN908947.3 | No |
-| flat | Output flat fastq_pass folder instead of sample name subdirectories (better for folder input of named files) | None | Yes
+| flat | Output flat fastq_pass folder instead of sample name subdirectories (better for folder input of named files) | False | Yes
+| downsample | Turn on downsampling of reads with seqtk | False | Yes |
+| downsample_count | Approximate number of reads to be kept for each sample | 100,000 | Yes |
+| downsample_seed | Integer seed to use for downsampling | 101 | Yes |
+| downsample_amplicons | Utilize bed file to downsample sequencing amplicons with samtools | None | Yes |
 
 #### **Running**
 
@@ -358,10 +377,10 @@ Found in `./results/<run_name>/run/` directory, the outputs for the Nanopore pip
 
 - fast5_pass --> Folder containing the finished dehosted fast5 files that can be used for any other analyses
     - Separated by either barcode## or sample name depending upon input fastq folder structure
-    - Only if --fast5_directory flag is passed
+    - Only if `--fast5_directory` arg is passed
 
 - sequencing_summary --> Simplified dehosted sequencing summary output only containing the read name and its specific fast5 file to allow data to be re-ran.
-    - Only if --fast5_directory flag is passed
+    - Only if `--fast5_directory` arg is passed
 
 - removal_summary --> CSV file containing read removal metrics. Found in `./results/<run_name>/` instead
     - Shows the number and percentage of reads kept
@@ -620,6 +639,35 @@ The output structure is setup as such so that the `run_name` organizes the seque
 
 ------
 
+## Downsampling
+
+Added in v0.3.0, allows a user to either randomly downsample their final fastq files or downsample their dehosted bam files based on a given amplicon bed file.
+
+Parameters are available in both the illumina and nanopore data pipelines and are as follows:
+| Parameter | Description | Default | Optional |
+|-|-|-|-|
+| downsample | Turn on downsampling of reads with seqtk | False | Yes |
+| downsample_count | Approximate number of reads to be kept for each sample | 200,000 Illumina - 100,000 Nanopore | Yes |
+| downsample_seed | Integer seed to use for downsampling | 101 | Yes |
+| downsample_amplicons | Utilize bed file to downsample sequencing amplicons with samtools | None | Yes |
+
+To use downsampling, turn it on by passing in `--downsample` to your command and then adjust the number of reads and the seed with the other available args. Downsampling is done using [seqtk](https://github.com/lh3/seqtk) which randomly downsamples the fastq files based on a given seed.
+
+Passing in the `--downsample_amplicons <BEDFILE>` will utilize a different approach to downsample the data. Instead of running on the dehosted fastq files, it is run on the dehosted bam file with samtools. Each definied region will be downsampled to a maximum read count based on the input `downsample_count` and the number of amplicons in the file which is calculated at run time. For example if `downsample_count=100000` and `amplicon_count=30`, then each amplicon would be downsampled to ~3334 reads.
+
+The amplicon bed file should be structured as such:
+```
+MN908947.3	54	1205	1	nCoV-2019_1	+
+MN908947.3	1128	2266	2	nCoV-2019_2	+
+MN908947.3	2179	3257	3	nCoV-2019_1	+
+MN908947.3	3166	4262	4	nCoV-2019_2	+
+ContigID	AmpStart	AmpEnd	Amp#	Pool	Direction
+```
+
+Although only the first 3 columns are used to downsample so the remaining ones can be excluded if wanted.
+
+------
+
 ## Profiles
 
 Profiles are a set of configuration attributes that can be activated (as many as you want as long as they are comma separated) when launching a pipeline. More information can be found [here](https://www.nextflow.io/docs/latest/config.html?highlight=profile#config-profiles)
@@ -632,9 +680,15 @@ Profiles can be activated with `-profile <profile_name>`. Below are the profiles
 
 The conda profile can be activated by passing `-profile conda`.
 
-This profile uses conda environments that are created on the fly or given by the cache parameter as `--cache <path/to/conda/envs/>` to control the dependencies and run the analysis
+This profile uses conda environments that are created on the fly or found in the given cache directory through the cache parameter (`--cache <path/to/conda/envs/>`) to control the dependencies and run the analysis.
 
 If the environments are having trouble being made, it is recommended to use mamba to install them
+
+### Mamba
+
+The conda profile can be activated by passing `-profile mamba`.
+
+This profile uses conda environments that are created on the fly with mamba or found in the given cache directory through the cache parameter (`--cache <path/to/conda/envs/>`) to control the dependencies and run the analysis.
 
 ### Custom
 
@@ -649,4 +703,3 @@ ex. [NML](https://github.com/phac-nml/ncov-dehoster/blob/master/conf/custom/nml.
 ## Other Notes:
 
 A fair amount of testing has gone into the pipeline but there may still be bugs or other issues. If you discover any please make an issue.
-

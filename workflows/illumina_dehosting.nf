@@ -10,7 +10,10 @@ include {
   combineCSVs
 } from '../modules/illumina.nf'
 
-include { seqtkSubsample } from '../modules/general.nf'
+include {
+  seqtkRandomSubsample;
+  samtoolsAmpliconDownsample
+} from '../modules/general.nf'
 include { outputVersions } from '../modules/versions.nf'
 
 // Workflow
@@ -50,13 +53,29 @@ workflow illuminaDehosting {
     dehostBamFiles(compositeMappingBWA.out.bam)
     ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
 
-    generateDehostedReads(dehostBamFiles.out.bam)
+    // Downsampling BAM with Amplicons
+    if ( params.downsample && params.downsample_amplicons ) {
+      samtoolsAmpliconDownsample(
+        dehostBamFiles.out.bam,
+        file(params.downsample_amplicons, checkIfExists: true),
+        'illumina',
+        params.downsample_count,
+        params.downsample_seed
+      )
+
+      ch_versions = ch_versions.mix(samtoolsAmpliconDownsample.out.versions.first())
+      ch_dehosted_bam = samtoolsAmpliconDownsample.out.bam
+    } else {
+      ch_dehosted_bam = dehostBamFiles.out.bam
+    }
+
+    generateDehostedReads(ch_dehosted_bam)
     ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
 
-    // Downsampling
-    if ( params.downsample ) {
-      seqtkSubsample(generateDehostedReads.out.dehosted_fastq, params.downsample_count)
-      ch_versions = ch_versions.mix(seqtkSubsample.out.versions.first())
+    // Downsampling Final Fastqs
+    if ( params.downsample && !params.downsample_amplicons ) {
+      seqtkRandomSubsample(generateDehostedReads.out.dehosted_fastq, params.downsample_count)
+      ch_versions = ch_versions.mix(seqtkRandomSubsample.out.versions.first())
     }
 
     combineCSVs(dehostBamFiles.out.csv.collect())

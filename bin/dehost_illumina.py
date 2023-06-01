@@ -92,7 +92,7 @@ def remove_host_reads(bamfile_in, input_mapping_quality, remove_reads_set, reads
 
 
 def generate_dehosted_output(reads_found, keep_header, bamfile_out):
-    with pysam.AlignmentFile(bamfile_out, "w", header=keep_header) as outfile:
+    with pysam.AlignmentFile(bamfile_out, "wb", header=keep_header) as outfile:
         for read in reads_found:
             outfile.write(read)
 

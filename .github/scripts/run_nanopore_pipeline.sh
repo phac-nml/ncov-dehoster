@@ -7,7 +7,7 @@ mkdir -p conda_cache_dir
 # --------------------------------------------------------------------- #
 ### Run Flat Pipeline ###
 nextflow run ./main.nf \
-    -profile conda,test \
+    -profile mamba,test \
     --cache ./conda_cache_dir \
     --nanopore \
     --minimap2 \
@@ -48,7 +48,7 @@ rm -rf results work/ .nextflow*
 # --------------------------------------------------------------------- #
 ### Run non-flat and test for cache dir working and human ref working ###
 nextflow run ./main.nf \
-    -profile conda,test \
+    -profile mamba,test \
     --cache ./conda_cache_dir \
     --nanopore \
     --minimap2 \
@@ -88,7 +88,7 @@ rm -rf results work/ .nextflow*
 # --------------------------------------------------------------------- #
 ### Run flat and test for downsampling ###
 nextflow run ./main.nf \
-    -profile conda,test \
+    -profile mamba,test \
     --cache ./conda_cache_dir \
     --nanopore \
     --minimap2 \
@@ -146,15 +146,16 @@ mv .nextflow.log artifacts/minimap2_expanded_flat_downsample.nextflow.log
 rm -rf results work/ .nextflow*
 
 # --------------------------------------------------------------------- #
-### Run non-flat and test for downsampling ###
+### Run non-flat and test for downsampling amplicons ###
 nextflow run ./main.nf \
-    -profile conda,test \
+    -profile mamba,test \
     --cache ./conda_cache_dir \
     --nanopore \
     --minimap2 \
     --downsample \
     --downsample_count 100 \
     --downsample_seed 42 \
+    --downsample_amplicons $PWD/.github/data/amplicon.bed \
     --fastq_directory $PWD/.github/data/nanopore/ \
     --run_name 'test-4-minimap2-partial-human-down100' \
     --human_ref $PWD/.github/data/partial_hg38_ref.fa
@@ -197,6 +198,12 @@ SEED=`awk -F, '$1 == "nanopore-1" {print $7}' ./results/test-4-minimap2-partial-
 if [[ "$SEED" != "42" ]]; then 
     echo "Incorrect output: Downsampling Seed"
     echo "  Expected: 42, Got: $SEED"
+    exit 1
+fi
+
+# 6. Region count file exists
+if [[ ! -f "./results/downsample_stats/nanopore-1_region_counts.csv" ]]; then
+    echo "nanopore-1_region_counts.csv expected output file not found"
     exit 1
 fi
 
