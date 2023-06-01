@@ -53,7 +53,9 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 - Added in optional downsampling with `--downsample` and a set of optional parameters
     - Random downsampling of final fastq reads with seqtk
     - Amplicon based downsampling of bam file with samtools
+- Reimplementation of conda to work with newer nextflow versions
 - Mamba added as its own profile
+
 
 #### Release v0.2.0
 - Better user parameter options
