@@ -5,16 +5,18 @@ import csv
 import pysam
 import os
 
+from typing import Tuple
 from pathlib import Path
 
-def init_parser():
+def init_parser() -> argparse.ArgumentParser:
     '''
     Parser Arguments to pass to script from CL
     '''
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--file', required=True, help='Composite Reference BAM file of mapped reads')
-    parser.add_argument('-k', '--keep_id', required=False, default='MN908947.3', type=str, help='Reference ID of genome to keep. Default: MN908947.3')
+    parser.add_argument('-f', '--file', required=True,
+                        help='Composite Reference BAM file of mapped reads')
+    parser.add_argument('-k', '--keep_id', required=False, default='MN908947.3', type=str,
+                        help='Reference ID of genome to keep. Default: MN908947.3')
     parser.add_argument('-m', '--min_reads', required=False, default=1, type=int, help='Minimum number of reads required to generate dehosted BAM file')
     parser.add_argument('-q', '--keep_minimum_quality', required=False, type=int, default=60, help='Minimum quality of the reads to keep. Default: 60')
     parser.add_argument('-Q', '--remove_minimum_quality', required=False, type=int, default=10, help='Minimum quality of the reads to be included in removal. Default: 10')
@@ -26,7 +28,9 @@ def init_parser():
 
     return parser
 
-def keep_reads_by_contig_id(bamfile_path, contig_ID, remove_minimum_quality, keep_minimum_quality, h_count=0, p_count=0, reads_to_remove_set=set(), read_list=[]):
+def keep_reads_by_contig_id(bamfile_path: str, contig_ID: str, remove_minimum_quality: int,
+                            keep_minimum_quality: int, h_count=0, p_count=0,reads_to_remove_set=set(),
+                            read_list=[]) -> Tuple[list, int, int, pysam.AlignmentHeader]:
     '''
     PURPOSE:
         Keep reads that are above the minimum quality threshold and match the wanted contig_ID.
@@ -66,8 +70,8 @@ def keep_reads_by_contig_id(bamfile_path, contig_ID, remove_minimum_quality, kee
 
     return read_list, h_count, p_count, header
 
-
-def generate_dehosted_output(read_list, keep_header, bamfile_out):
+def generate_dehosted_output(read_list: list, keep_header: pysam.AlignmentHeader,
+                             bamfile_out: str) -> None:
     '''
     PURPOSE:
         Generate output dehosted BAM file to output path
@@ -107,7 +111,6 @@ def main():
     if args.downsampled:
         if kept_count > args.downsampled_count:
             kept_count = args.downsampled_count
-            percentage_kept = kept_count/(h_count + p_count + kept_count) * 100
 
         line = {    'sample' : sample_name,
                     'human_reads_filtered' : h_count, 
@@ -116,6 +119,7 @@ def main():
                     'percentage_kept' : "{:.2f}".format(percentage_kept),
                     'downsample_maximum_reads' : args.downsampled_count,
                     'downsample_seed' : args.downsampled_seed,
+                    'meets_count_filter' : output_generated,
                     'github_commit' : args.revision}
     else:
         line = {    'sample' : sample_name,

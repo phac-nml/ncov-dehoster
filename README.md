@@ -3,9 +3,9 @@
 ## About:
 Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore sequencing data. Basic details for the three available pipelines are as follows:
 
-**Illumina Paired Pipeline \(v0.3.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
+**Illumina Paired Pipeline \(v0.4.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
 
-**Nanopore Minimap2 Fastq Pipeline \(v0.3.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
+**Nanopore Minimap2 Fastq Pipeline \(v0.4.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
 - Strict demultiplexing is *highly recommended* before running (unable to do so after and it improves downstream analyses)
 - Optional fast5 dehosting available with argument `--fast5_directory [dir]`
 
@@ -49,11 +49,15 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 
 ## Changelog Highlights
 
-#### Release v0.3.0
+#### Release v0.4.0
 - Added in optional downsampling with `--downsample` and a set of optional parameters
     - Random downsampling of final fastq reads with seqtk
     - Amplicon based downsampling of bam file with samtools
-- Mamba added as its own profile
+- Mamba added as its own profile instead of forcing it with conda
+
+#### Release v0.3.0
+- Adjusted how conda is implemented to support newer nextflow versions
+- Fixed integration tests
 
 #### Release v0.2.0
 - Better user parameter options
@@ -641,7 +645,7 @@ The output structure is setup as such so that the `run_name` organizes the seque
 
 ## Downsampling
 
-Added in v0.3.0, allows a user to either randomly downsample their final fastq files or downsample their dehosted bam files based on a given amplicon bed file.
+Added in v0.4.0, allows a user to either randomly downsample their final fastq files or downsample their dehosted bam files based on a given amplicon bed file.
 
 Parameters are available in both the illumina and nanopore data pipelines and are as follows:
 | Parameter | Description | Default | Optional |

@@ -1,15 +1,28 @@
-## Version 0.3.0
+## Version 0.4.0
 ----------------
 Additions:
 - Added downsampling and its params
-    - Random downsampling with seqtk
-    - Amplicon downsampling with samtools
+    - Adds `seqtk` as a dependency to the environments
+    - Random downsampling with seqtk option
+    - Amplicon downsampling with samtools option
+- Additional columns in the removal summary file if downsampling is used
+    - downsample_maximum_reads
+    - downsample_seed
+- Mamba profile added
+    - Conda profile no longer defaults to using mamba
 
+General Developer Changes:
+- Changed logic on how --flat is works with nanopore dehosting
+    - No longer a different process module
+- Updated some of the outputs to be `path` rather than `file`
+- Adjusted how the versions output is created
+- Adjusted formatting of modules to make them easier to read
+
+## Version 0.3.0
+----------------
 General Developer Changes:
 - Changed how conda is implemented to match nextflow version updates
 - Fixed tests
-- Changed logic on how --flat is works with nanopore dehosting
-    - No longer a different process module
 
 ## Version 0.2.0
 ----------------
