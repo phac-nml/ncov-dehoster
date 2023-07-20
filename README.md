@@ -59,6 +59,7 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 - Adjusted how conda is implemented to support newer nextflow versions
 - Fixed integration tests
 
+
 #### Release v0.2.0
 - Better user parameter options
     - Added `--keep_ref_id <ID>` to allow user to pick what reference ID they want to keep in output fastq files
