@@ -11,6 +11,14 @@ Additions:
 - Mamba profile added
     - Conda profile no longer defaults to using mamba
 
+Environment Adjustments:
+- Specified versions for the following tools in the nanopore and illumina environment files:
+    - samtools=1.17
+    - python=3.10
+    - pysam=0.21.0
+    - seqtk=1.4
+    - minimap2=2.26
+
 General Developer Changes:
 - Changed logic on how --flat is works with nanopore dehosting
     - No longer a different process module
