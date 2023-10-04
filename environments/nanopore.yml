@@ -3,11 +3,10 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - samtools
-  - minimap2
+  - samtools=1.17
+  - python=3.10
+  - minimap2=2.26
   - ont-fast5-api
   - csvtk
-  - seqtk
-  - pip
-  - pip:
-    - pysam
+  - seqtk=1.4
+  - pysam=0.21.0
