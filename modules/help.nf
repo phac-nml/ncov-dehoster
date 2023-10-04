@@ -9,6 +9,10 @@ def helpStatement() {
     Overall Optional Arguments:
         --cache [path]                  Path to cache directory containing conda environments
         --outdir [str]                  Name for the output directory (Default: 'results')
+        --downsample                    Turn on random downsampling of reads with seqtk
+        --downsample_count [i]          Integer approximate number of reads to downsample to (Default: 100,000)
+        --downsample_seed [i]           Integer downsample seed to utilize (Default: 101)
+        --downsample_amplicons [file]   Bed file to use to downsample amplicon regions with samtools instead of randomly with seqtk
 
     Profiles:
         -profile [conda,nml]            Configuration profile to use. Can use both if separated by a comma

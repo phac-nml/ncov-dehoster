@@ -7,11 +7,14 @@ include {
   compositeMappingMM2;
   removeHumanReads;
   regenerateFastqFiles;
-  regenerateFastqFilesFlat;
   regenerateFast5s_MM2
 } from '../modules/nanopore_minimap2.nf'
 
-include { outputVersionsNanopore } from '../modules/versions.nf'
+include {
+  seqtkRandomSubsample ;
+  samtoolsAmpliconDownsample ;
+} from '../modules/general.nf'
+include { outputVersions } from '../modules/versions.nf'
 
 // From nanostripper pipeline
 include {
@@ -52,27 +55,47 @@ workflow nanoporeMinimap2Dehosting {
     }
     
     fastqSizeSelection_MM2(ch_fastq)
+    ch_versions = ch_versions.mix(fastqSizeSelection_MM2.out.versions.first())
     
     compositeMappingMM2(fastqSizeSelection_MM2.out.fastq
                                            .combine(ch_CompReference))
+    ch_versions = ch_versions.mix(compositeMappingMM2.out.versions.first())
 
     removeHumanReads(compositeMappingMM2.out.comp_bam)
+    ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
+
+    // Downsampling BAM with Amplicons
+    if ( params.downsample && params.downsample_amplicons ) {
+      samtoolsAmpliconDownsample(
+        removeHumanReads.out.bam,
+        file(params.downsample_amplicons, checkIfExists: true),
+        'nanopore',
+        params.downsample_count,
+        params.downsample_seed
+      )
+
+      ch_versions = ch_versions.mix(samtoolsAmpliconDownsample.out.versions.first())
+      ch_dehosted_bam = samtoolsAmpliconDownsample.out.bam
+    } else {
+      ch_dehosted_bam = removeHumanReads.out.bam
+    }
 
     // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
-    if ( params.flat ) {
-      regenerateFastqFilesFlat(removeHumanReads.out.bam)
-      regenerateFastqFilesFlat.out.dehosted_fastq
-                              .filter{ it[1].countFastq() >= params.min_read_count }
-                              .set { ch_host_rm_fastq }
+    regenerateFastqFiles(ch_dehosted_bam)
+    regenerateFastqFiles.out.dehosted_fastq
+                        .filter{ it[1].countFastq() >= params.min_read_count }
+                        .set { ch_host_rm_fastq }
 
-      ch_versions = ch_versions.mix(regenerateFastqFilesFlat.out.versions.first())
+    ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
+
+    // Downsampling Fastq
+    if ( params.downsample && !params.downsample_amplicons ) {
+      seqtkRandomSubsample(ch_host_rm_fastq, params.downsample_count)
+
+      ch_versions = ch_versions.mix(seqtkRandomSubsample.out.versions.first())
+      ch_final_fastq = seqtkRandomSubsample.out.reads
     } else {
-      regenerateFastqFiles(removeHumanReads.out.bam)
-      regenerateFastqFiles.out.dehosted_fastq
-                          .filter{ it[1].countFastq() >= params.min_read_count }
-                          .set { ch_host_rm_fastq }
-
-      ch_versions = ch_versions.mix(regenerateFastqFiles.out.versions.first())
+      ch_final_fastq = ch_host_rm_fastq
     }
 
     // If a fast5 directory is given, we can use the fastq files to regenerate dehosted fast5 files
@@ -80,7 +103,7 @@ workflow nanoporeMinimap2Dehosting {
     if ( params.fast5_directory ) {
       Channel.fromPath( "${params.fast5_directory}")
                         .set{ ch_Fast5 }
-      regenerateFast5s_MM2(ch_host_rm_fastq.combine(ch_Fast5))
+      regenerateFast5s_MM2(ch_final_fastq.combine(ch_Fast5))
 
       ch_versions = ch_versions.mix(regenerateFast5s_MM2.out.versions.first())
 
@@ -89,16 +112,13 @@ workflow nanoporeMinimap2Dehosting {
 
     // Finally make CSV output
     combineCSVs(removeHumanReads.out.csv.collect())
+    ch_versions = ch_versions.mix(combineCSVs.out.versions)
 
     // Version Tracking and Output
-    ch_versions = ch_versions.mix(fastqSizeSelection_MM2.out.versions.first())
-    ch_versions = ch_versions.mix(compositeMappingMM2.out.versions.first())
-    ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
-    ch_versions = ch_versions.mix(combineCSVs.out.versions)
-    outputVersionsNanopore(ch_versions.collect())
+    outputVersions(ch_versions.collectFile(name: 'tool_versions.yml'))
 }
 
-// Workflow Nanostripper - NOT MAINTAINED AT THE MOMENT!!!//
+// Workflow Nanostripper - !!!NOT MAINTAINED AT THE MOMENT!!!//
 workflow nanoporeNanostripperDehosting {
     take:
       ch_fast5

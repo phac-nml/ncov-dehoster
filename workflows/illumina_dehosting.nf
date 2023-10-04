@@ -10,7 +10,11 @@ include {
   combineCSVs
 } from '../modules/illumina.nf'
 
-include { outputVersionsIllumina } from '../modules/versions.nf'
+include {
+  seqtkRandomSubsample;
+  samtoolsAmpliconDownsample
+} from '../modules/general.nf'
+include { outputVersions } from '../modules/versions.nf'
 
 // Workflow
 workflow illuminaDehosting {
@@ -29,7 +33,7 @@ workflow illuminaDehosting {
     generateCompositeReference(ch_HumanReference, 
                                 ch_CovidReference)
 
-    if ( params.composite_bwa_index ){
+    if ( params.composite_bwa_index ) {
       grabCompositeIndex("${params.composite_bwa_index}")
       grabCompositeIndex.out
               .set{ ch_index }
@@ -44,17 +48,39 @@ workflow illuminaDehosting {
     compositeMappingBWA(ch_fastqs
                         .combine(generateCompositeReference.out),
                       ch_index)
+    ch_versions = ch_versions.mix(compositeMappingBWA.out.versions.first())
 
     dehostBamFiles(compositeMappingBWA.out.bam)
+    ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
 
-    generateDehostedReads(dehostBamFiles.out.bam)
+    // Downsampling BAM with Amplicons
+    if ( params.downsample && params.downsample_amplicons ) {
+      samtoolsAmpliconDownsample(
+        dehostBamFiles.out.bam,
+        file(params.downsample_amplicons, checkIfExists: true),
+        'illumina',
+        params.downsample_count,
+        params.downsample_seed
+      )
+
+      ch_versions = ch_versions.mix(samtoolsAmpliconDownsample.out.versions.first())
+      ch_dehosted_bam = samtoolsAmpliconDownsample.out.bam
+    } else {
+      ch_dehosted_bam = dehostBamFiles.out.bam
+    }
+
+    generateDehostedReads(ch_dehosted_bam)
+    ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
+
+    // Downsampling Final Fastqs
+    if ( params.downsample && !params.downsample_amplicons ) {
+      seqtkRandomSubsample(generateDehostedReads.out.dehosted_fastq, params.downsample_count)
+      ch_versions = ch_versions.mix(seqtkRandomSubsample.out.versions.first())
+    }
 
     combineCSVs(dehostBamFiles.out.csv.collect())
-
-    // Version Tracking and Output
-    ch_versions = ch_versions.mix(compositeMappingBWA.out.versions.first())
-    ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
-    ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
     ch_versions = ch_versions.mix(combineCSVs.out.versions)
-    outputVersionsIllumina(ch_versions.collect())
+
+    // Version Tracking Output
+    outputVersions(ch_versions.collectFile(name: 'tool_versions.yml'))
 }
