@@ -49,6 +49,9 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 
 ## Changelog Highlights
 
+#### Release v0.5.0
+- Adjusted resource labels to match nf-core's along with adding in retries for specific processes
+
 #### Release v0.4.0
 - Added in optional downsampling with `--downsample` and a set of optional parameters
     - Random downsampling of final fastq reads with seqtk
@@ -58,7 +61,6 @@ Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore 
 #### Release v0.3.0
 - Adjusted how conda is implemented to support newer nextflow versions
 - Fixed integration tests
-
 
 #### Release v0.2.0
 - Better user parameter options
@@ -137,7 +139,7 @@ nextflow run phac-nml/ncov-dehoster -profile conda --nanopore --minimap2 --fastq
 
 Minimum computational specs required for the minimap2 nanopore fastq host removal pipeline are 2+ cpu and 12+G memory. More resources may be needed depending on the size of the input fastq files.
 
-#### Nanostripper Fast5 Pipeline (Developmental)
+#### Nanostripper Fast5 Pipeline (Depreciated)
 
 *Requires conda* due to use of how the guppy environments are input as parameters at the moment (and that they cannot be made with conda as they are proprietary)
 
@@ -183,6 +185,9 @@ Other arguments include:
 | downsample_count | Approximate number of reads to be kept for each sample | 200,000 | Yes |
 | downsample_seed | Integer seed to use for downsampling | 101 | Yes |
 | downsample_amplicons | Utilize bed file to downsample sequencing amplicons with samtools | None | Yes |
+| max_memory | Maximum memory to allow for a process | 256.GB | Yes |
+| max_cpus | Maximum number of CPUs to allow for a process | 16 | Yes |
+| max_time | Maximum time to allow a process to run for | 120.h | Yes |
 
 #### **Running**
 
