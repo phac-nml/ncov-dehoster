@@ -3,13 +3,13 @@
 ## About:
 Nextflow pipeline that removes human reads from SARS-CoV-2 Illumina or Nanopore sequencing data. Basic details for the three available pipelines are as follows:
 
-**Illumina Paired Pipeline \(v0.4.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
+**Illumina Paired Pipeline \(v0.5.0)** - Competitive mapping approach using [bwa mem](http://bio-bwa.sourceforge.net/bwa.shtml) to remove human reads from input fastq file pairs while maintaining as many viral reads as possible.
 
-**Nanopore Minimap2 Fastq Pipeline \(v0.4.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
+**Nanopore Minimap2 Fastq Pipeline \(v0.5.0)** - Competitive mapping approach using [minimap2](https://github.com/lh3/minimap2) to remove human reads from either input fastq files or barcoded fastq directories while maintaining as many viral reads as possible. 
 - Strict demultiplexing is *highly recommended* before running (unable to do so after and it improves downstream analyses)
 - Optional fast5 dehosting available with argument `--fast5_directory [dir]`
 
-**Nanopore Nanostripper Fast5 Pipeline \(v0.1.0-Developmental)** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate dehosted, demultiplexed fast5 and fastq files from input fast5 files. 
+**Nanopore Nanostripper Fast5 Pipeline \(v0.1.0-Depreciated)** - Dual mapping approach based around [nanostripper](https://github.com/nodrogluap/nanostripper) and [guppy](https://nanoporetech.com/nanopore-sequencing-data-analysis) to generate dehosted, demultiplexed fast5 and fastq files from input fast5 files. 
 
 - *Currently Developmental*, the nanopore nanostripper dehosting pipeline is slow (full 96 sample run takes 6+ hours) and not setup well for external users which makes it **unrecommended** to try. You will have to provide a path to the guppy environment(s), the nanostripper environment and the nanostripper tool itself with the following arguments to generate a completely dehosted run and then it still may not work correctly:
     - `--guppyGPU <path/to/guppyGPU/env>`
