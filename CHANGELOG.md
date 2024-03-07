@@ -1,3 +1,10 @@
+## Version 0.5.0
+----------------
+
+General Developer Changes:
+- Adjusted all labels and resources to be in line with nf-core
+    - Added timeouts to processes as well
+
 ## Version 0.4.0
 ----------------
 Additions:

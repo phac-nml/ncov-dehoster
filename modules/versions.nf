@@ -1,7 +1,6 @@
 process outputVersions {
     publishDir "${params.outdir}", pattern: "process_versions.yml", mode: "copy"
-
-    label 'smallCPU'
+    label 'process_low'
 
     input:
     path versions

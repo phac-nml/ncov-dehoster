@@ -5,9 +5,8 @@ process seqtkRandomSubsample {
         pattern: "*.fastq*",
         mode: "copy"
     ]
-
+    label 'process_low'
     tag { sampleName }
-    label 'smallCPU'
 
     input:
     tuple val(sampleName), path(reads)
@@ -48,8 +47,8 @@ process seqtkRandomSubsample {
 }
 process samtoolsAmpliconDownsample {
     publishDir "${params.outdir}/downsample_stats", pattern: "${sampleName}_region_counts.csv", mode: "copy"
+    label 'process_low'
     tag { sampleName }
-    label 'smallCPU'
 
     input:
     tuple val(sampleName), path(bam)

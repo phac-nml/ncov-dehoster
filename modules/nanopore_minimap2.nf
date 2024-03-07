@@ -1,7 +1,6 @@
 process generateMinimap2Index {
     publishDir "${params.outdir}/compositeMinimapIndex", pattern: "composite_ref.mmi", mode: "symlink"
-
-    label 'indexResources'
+    label 'process_high_memory'
 
     input:
     path(human_ref)
@@ -25,7 +24,7 @@ process generateMinimap2Index {
 }
 
 process fastqSizeSelection_MM2 {
-    label 'mediumMem'
+    label 'process_medium'
     tag { sampleName }
 
     input:
@@ -36,7 +35,6 @@ process fastqSizeSelection_MM2 {
     path("versions.yml"), emit: versions
 
     script:
-
     // Base ID name
     sampleName = fastq.getBaseName().replaceAll(~/\.fastq.*$/, '')
     
@@ -76,7 +74,8 @@ process fastqSizeSelection_MM2 {
 }
 
 process compositeMappingMM2 {
-    label 'mediumMem'
+    label 'process_medium'
+    label 'error_retry'
     tag { sampleName }
 
     input:
@@ -102,7 +101,7 @@ process compositeMappingMM2 {
 }
 
 process removeHumanReads {
-    label 'smallCPU'
+    label 'process_low'
     tag { sampleName }
 
     input:
@@ -155,8 +154,8 @@ process regenerateFastqFiles {
             mode: "copy"
         ]
     }
-
-    label 'smallCPU'
+    label 'process_low'
+    label 'error_retry'
     tag { sampleName }
 
     input:
@@ -180,8 +179,8 @@ process regenerateFastqFiles {
 
 process regenerateFast5s_MM2 {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${sampleName}", mode: "copy"
-
-    label 'regenerateFast5s'
+    label 'process_medium'
+    label 'error_retry'
     tag { sampleName }
 
     input:

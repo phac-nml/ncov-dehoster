@@ -1,6 +1,6 @@
 process nanostripper {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_dehosted/${barcodeName}", mode: "copy"
-
+    label 'error_retry'
     tag { barcodeName }
 
     input:
@@ -23,6 +23,8 @@ process nanostripper {
 }
 
 process guppyBasecallerGPU {
+    label 'error_retry'
+
     input:
     path(dehosted_fast5s)
 
@@ -36,6 +38,8 @@ process guppyBasecallerGPU {
 }
 
 process guppyBasecallerCPU {
+    label 'error_retry'
+
     input:
     path(dehosted_fast5_barcode)
 
@@ -49,7 +53,7 @@ process guppyBasecallerCPU {
 }
 
 process combineFastq {
-    label 'largeMem'
+    label 'process_low'
 
     input:
     path(fastq_pass_dehosted_only)
@@ -64,7 +68,7 @@ process combineFastq {
 }
 
 process fastqSizeSelection_NS {
-    label 'mediumMem'
+    label 'process_medium'
 
     input:
     file(combined_fastq)
@@ -82,8 +86,7 @@ process fastqSizeSelection_NS {
 
 process fastqDemultiplex {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fastq_pass", mode: "copy"
-
-    label 'largeMem'
+    label 'process_high_memory'
 
     input:
     file(dehosted_combined_fastq)
@@ -100,8 +103,7 @@ process fastqDemultiplex {
 
 process combineFast5Barcodes {
     // Done to make a single directory of the fast5 dehosted only files for regenerateFast5 process
-
-    label 'smallCPU'
+    label 'process_low'
 
     input:
     path(dehosted_fast5s)
@@ -119,8 +121,8 @@ process combineFast5Barcodes {
 
 process regenerateFast5s_NS {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${barcodeName}", mode: "copy"
-
-    label 'regenerateFast5s'
+    label 'process_medium'
+    label 'error_retry'
     tag { barcodeName }
 
     input:
@@ -132,7 +134,6 @@ process regenerateFast5s_NS {
     path "${barcodeName}.csv" , emit: csv
 
     script:
-
     barcodeName = dehosted_fastq_barcode.getBaseName().replaceAll(~/\.*$/, '')
 
     def rev = workflow.commitId ?: workflow.revision ?: workflow.scriptId
@@ -146,8 +147,7 @@ process regenerateFast5s_NS {
 
 process generateSimpleSequencingSummary {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "sequencing_summary.txt", mode: "copy"
-
-    label 'smallCPU'
+    label 'process_low'
 
     input:
     path(fast5_barcode)
@@ -163,8 +163,7 @@ process generateSimpleSequencingSummary {
 
 process combineCSVs {
     publishDir "${params.outdir}/${params.run_name}", pattern: "removal_summary.csv", mode: "copy"
-
-    label 'smallCPU'
+    label 'process_low'
 
     input:
     path(csvs)
