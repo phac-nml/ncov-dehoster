@@ -3,7 +3,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - samtools=1.17
+  - samtools=1.19
   - python=3.10
   - bwa
   - pysam=0.21.0

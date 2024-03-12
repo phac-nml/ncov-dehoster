@@ -113,7 +113,9 @@ process dehostBamFiles {
         -Q ${params.remove_min_map_quality} \\
         -o ${sampleName}.dehosted.bam \\
         -R ${rev}
-    samtools sort -n ${sampleName}.dehosted.bam > ${sampleName}.dehosted.sorted.bam
+
+    # Sort final output
+    samtools sort -N ${sampleName}.dehosted.bam > ${sampleName}.dehosted.sorted.bam
 
     # Versions #
     cat <<-END_VERSIONS > versions.yml
