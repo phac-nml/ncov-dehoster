@@ -1,6 +1,23 @@
+## Version 0.5.1
+----------------
+Outputs:
+- Illumina dehosted fastq files are now generated from the dehosted bam files sorted with the `samtools sort -n` flag
+    - Previously it was just `samtools sort <BAM>`
+    - Should address inconsistent instances of illumina reads not being output in proper pairs
+
+General Developer Changes:
+- Samtools sort added as its own module following either composite mapping or amplicon downsampling
+    - Amplicon downsampling now has a sort command before it but not after
+        - Illumina and Nanopore pipelines updated appropriately for this
+- Added new test for mapping illumina after it is output from the pipeline
+    - Mostly to see if `bwa mem` is having issues mapping the final files
+- Fixed some spacing/formatting in
+    - Illumina workflow
+    - Illumina modules
+    - Nanopore modules
+
 ## Version 0.5.0
 ----------------
-
 General Developer Changes:
 - Adjusted all labels and resources to be in line with nf-core
     - Added timeouts to processes as well
