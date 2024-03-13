@@ -6,6 +6,8 @@ mkdir -p conda_cache_dir
 
 # --------------------------------------------------------------------- #
 ### Run Illumina Pipeline ###
+echo "Illumina Pipeline Basic Test"
+echo "----------------------------"
 nextflow run ./main.nf \
     -profile mamba,test \
     --cache ./conda_cache_dir \
@@ -36,6 +38,8 @@ rm -rf results work/ .nextflow*
 
 # --------------------------------------------------------------------- #
 ### Run Illumina Pipeline with Downsampling ###
+echo "Illumina Pipeline Downsampling Fastqs"
+echo "-------------------------------------"
 nextflow run ./main.nf \
     -profile mamba,test \
     --cache ./conda_cache_dir \
@@ -85,6 +89,8 @@ rm -rf results work/ .nextflow*
 
 # --------------------------------------------------------------------- #
 ### Run Illumina Pipeline with Downsampling using Amplicons ###
+echo "Illumina Pipeline Downsampling Amplicons"
+echo "----------------------------------------"
 nextflow run ./main.nf \
     -profile mamba,test \
     --cache ./conda_cache_dir \
@@ -137,6 +143,39 @@ fi
 
 # Reset and Track
 mv .nextflow.log artifacts/illumina_downsampled.nextflow.log
+mv results next-round-input
+rm -rf work/ .nextflow*
+
+# --------------------------------------------------------------------- #
+### Run Illumina Pipeline on Previous Data to check it still maps ###
+echo "Illumina Pipeline Previous Data"
+echo "-------------------------------"
+nextflow run ./main.nf \
+    -profile mamba,test \
+    --cache ./conda_cache_dir \
+    --illumina \
+    --directory $PWD/next-round-input/dehosted_paired_fastqs \
+    --human_ref $PWD/.github/data/partial_hg38_ref.fa
+
+### Check Pipeline Outputs ###
+# 1. Num Human Reads
+READS=`awk -F, '$1 == "illumina-18_S15_dehosted" {print $2}' ./results/removal_summary.csv`
+if [[ "$READS" != "0" ]]; then 
+    echo "Incorrect output: Number of Human Reads"
+    echo "  Expected: 0, Got: $READS"
+    exit 1
+fi
+
+# 2. Total Reads Kept
+READS=`awk -F, '$1 == "illumina-4_S12_dehosted" {print $4}' ./results/removal_summary.csv`
+if [[ "$READS" != "1184" ]]; then 
+    echo "Incorrect output: Number of Paired Reads Kept"
+    echo "  Expected: 1184, Got: $READS"
+    exit 1
+fi
+
+# Reset and Track
+mv .nextflow.log artifacts/illumina_downsampled_reran.nextflow.log
 rm -rf results work/ .nextflow*
 
 echo "Done"

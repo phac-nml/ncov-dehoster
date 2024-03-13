@@ -13,7 +13,6 @@ process generateCompositeReference {
     cat $human_ref $viral_ref > composite_reference.fa
     """
 }
-
 process grabCompositeIndex {
     label 'process_single'
 
@@ -28,7 +27,6 @@ process grabCompositeIndex {
     ln -sf $index_folder/*.fa* ./
     """
 }
-
 process indexCompositeReference {
     publishDir "${params.outdir}/humanBWAIndex", pattern: "*.fa*", mode: "symlink"
     label 'process_high_memory'
@@ -51,7 +49,6 @@ process indexCompositeReference {
     END_VERSIONS
     """
 }
-
 process compositeMappingBWA {
     publishDir "${params.outdir}/compositeMAPs", pattern: "${sampleName}.*", mode: "copy"
     label 'process_medium'
@@ -80,9 +77,7 @@ process compositeMappingBWA {
     END_VERSIONS
     """
 }
-
 process dehostBamFiles {
-    publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.sorted.bam", mode: "copy"
     label 'process_low'
     tag { sampleName }
 
@@ -90,7 +85,7 @@ process dehostBamFiles {
     tuple val(sampleName), path(composite_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.dehosted.sorted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.dehosted.bam"), emit: bam
     path("${sampleName}*.csv"), emit: csv
     path("versions.yml"), emit: versions
 
@@ -113,7 +108,6 @@ process dehostBamFiles {
         -Q ${params.remove_min_map_quality} \\
         -o ${sampleName}.dehosted.bam \\
         -R ${rev}
-    samtools sort ${sampleName}.dehosted.bam > ${sampleName}.dehosted.sorted.bam
 
     # Versions #
     cat <<-END_VERSIONS > versions.yml
@@ -123,7 +117,30 @@ process dehostBamFiles {
     END_VERSIONS
     """
 }
+process samtoolsReadNameSort {
+    // Sort final bam file by read names to hopefully always have reads correctly paired
+    label 'process_low'
+    tag { sampleName }
+    publishDir "${params.outdir}/dehostedBAMs", pattern: "${sampleName}.dehosted.sorted.bam", mode: "copy"
 
+    input:
+    tuple val(sampleName), path(bam)
+
+    output:
+    tuple val(sampleName), path("${sampleName}.dehosted.sorted.bam"), emit: bam
+    path("versions.yml"), emit: versions
+
+    script:
+    """
+    samtools sort -n $bam > ${sampleName}.dehosted.sorted.bam
+
+    # Versions #
+    cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
+    END_VERSIONS
+    """
+}
 process generateDehostedReads {
     // Output if we are not fastq downsampling
     if ( !params.downsample || params.downsample_amplicons ) {
@@ -150,7 +167,6 @@ process generateDehostedReads {
     END_VERSIONS
     """
 }
-
 process combineCSVs {
     publishDir "${params.outdir}", pattern: "removal_summary.csv", mode: "copy"
     label 'process_low'

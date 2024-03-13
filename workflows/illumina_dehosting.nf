@@ -6,6 +6,7 @@ include {
   indexCompositeReference;
   compositeMappingBWA;
   dehostBamFiles;
+  samtoolsReadNameSort ;
   generateDehostedReads;
   combineCSVs
 } from '../modules/illumina.nf'
@@ -30,28 +31,33 @@ workflow illuminaDehosting {
 
     // Always need to make the composite reference, even if an index is given
     // This might lead to issues if the composite index given does match the generated reference but we will watch for that and re-visit it later
-    generateCompositeReference(ch_HumanReference, 
-                                ch_CovidReference)
+    generateCompositeReference(
+      ch_HumanReference, 
+      ch_CovidReference
+    )
 
+    // Get index files if we are provided them, otherwise remake it
     if ( params.composite_bwa_index ) {
       grabCompositeIndex("${params.composite_bwa_index}")
-      grabCompositeIndex.out
-              .set{ ch_index }
+      ch_index = grabCompositeIndex.out
     } else {
-      indexCompositeReference(generateCompositeReference.out)
-      indexCompositeReference.out.index.collect()
-              .set{ ch_index }
-
+      indexCompositeReference(
+        generateCompositeReference.out
+      )
+      ch_index = indexCompositeReference.out.index.collect()
       ch_versions = ch_versions.mix(indexCompositeReference.out.versions)
     }
 
-    compositeMappingBWA(ch_fastqs
-                        .combine(generateCompositeReference.out),
-                      ch_index)
+    // Composite Mapping and Dehosting
+    compositeMappingBWA(
+      ch_fastqs.combine(generateCompositeReference.out),
+      ch_index
+    )
     ch_versions = ch_versions.mix(compositeMappingBWA.out.versions.first())
 
     dehostBamFiles(compositeMappingBWA.out.bam)
     ch_versions = ch_versions.mix(dehostBamFiles.out.versions.first())
+    ch_dehosted_bam = dehostBamFiles.out.bam
 
     // Downsampling BAM with Amplicons
     if ( params.downsample && params.downsample_amplicons ) {
@@ -65,11 +71,13 @@ workflow illuminaDehosting {
 
       ch_versions = ch_versions.mix(samtoolsAmpliconDownsample.out.versions.first())
       ch_dehosted_bam = samtoolsAmpliconDownsample.out.bam
-    } else {
-      ch_dehosted_bam = dehostBamFiles.out.bam
     }
 
-    generateDehostedReads(ch_dehosted_bam)
+    // Final Generate Fastqs
+    samtoolsReadNameSort(ch_dehosted_bam)
+    ch_versions = ch_versions.mix(samtoolsReadNameSort.out.versions.first())
+
+    generateDehostedReads(samtoolsReadNameSort.out.bam)
     ch_versions = ch_versions.mix(generateDehostedReads.out.versions.first())
 
     // Downsampling Final Fastqs

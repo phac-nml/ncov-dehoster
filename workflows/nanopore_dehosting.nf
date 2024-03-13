@@ -6,6 +6,7 @@ include {
   fastqSizeSelection_MM2;
   compositeMappingMM2;
   removeHumanReads;
+  samtoolsSort ;
   regenerateFastqFiles;
   regenerateFast5s_MM2
 } from '../modules/nanopore_minimap2.nf'
@@ -63,6 +64,7 @@ workflow nanoporeMinimap2Dehosting {
 
     removeHumanReads(compositeMappingMM2.out.comp_bam)
     ch_versions = ch_versions.mix(removeHumanReads.out.versions.first())
+    ch_dehosted_bam = removeHumanReads.out.bam
 
     // Downsampling BAM with Amplicons
     if ( params.downsample && params.downsample_amplicons ) {
@@ -76,12 +78,12 @@ workflow nanoporeMinimap2Dehosting {
 
       ch_versions = ch_versions.mix(samtoolsAmpliconDownsample.out.versions.first())
       ch_dehosted_bam = samtoolsAmpliconDownsample.out.bam
-    } else {
-      ch_dehosted_bam = removeHumanReads.out.bam
     }
 
+    samtoolsSort(ch_dehosted_bam)
+
     // Output either flat fastq directory or normal nanopore formatted output based on CL --flat arg
-    regenerateFastqFiles(ch_dehosted_bam)
+    regenerateFastqFiles(samtoolsSort.out.bam)
     regenerateFastqFiles.out.dehosted_fastq
                         .filter{ it[1].countFastq() >= params.min_read_count }
                         .set { ch_host_rm_fastq }
