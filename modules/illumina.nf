@@ -85,7 +85,7 @@ process dehostBamFiles {
     tuple val(sampleName), path(composite_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.dehosted.sorted.bam"), emit: bam
+    tuple val(sampleName), path("${sampleName}.dehosted.bam"), emit: bam
     path("${sampleName}*.csv"), emit: csv
     path("versions.yml"), emit: versions
 
