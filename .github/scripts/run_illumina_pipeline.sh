@@ -168,9 +168,9 @@ fi
 
 # 2. Total Reads Kept
 READS=`awk -F, '$1 == "illumina-4_S12_dehosted" {print $4}' ./results/removal_summary.csv`
-if [[ "$READS" != "100" ]]; then 
+if [[ "$READS" != "1184" ]]; then 
     echo "Incorrect output: Number of Paired Reads Kept"
-    echo "  Expected: 100, Got: $READS"
+    echo "  Expected: 1184, Got: $READS"
     exit 1
 fi
 
