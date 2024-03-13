@@ -22,7 +22,6 @@ process generateMinimap2Index {
     END_VERSIONS
     """
 }
-
 process fastqSizeSelection_MM2 {
     label 'process_medium'
     tag { sampleName }
@@ -72,7 +71,6 @@ process fastqSizeSelection_MM2 {
         """
     }
 }
-
 process compositeMappingMM2 {
     label 'process_medium'
     label 'error_retry'
@@ -99,7 +97,6 @@ process compositeMappingMM2 {
     END_VERSIONS
     """
 }
-
 process removeHumanReads {
     label 'process_low'
     tag { sampleName }
@@ -108,7 +105,7 @@ process removeHumanReads {
     tuple val(sampleName), path(sorted_bam)
 
     output:
-    tuple val(sampleName), path("${sampleName}.host_removed.sorted.bam"), optional: true, emit: bam
+    tuple val(sampleName), path("${sampleName}.host_removed.bam"), optional: true, emit: bam
     path "${sampleName}*.csv", emit: csv
     path("versions.yml"), emit: versions
 
@@ -131,11 +128,6 @@ process removeHumanReads {
         --output ${sampleName}.host_removed.bam \\
         --revision ${rev}
 
-    # Sort if file made
-    if [ -f "${sampleName}.host_removed.bam" ]; then
-        samtools sort ${sampleName}.host_removed.bam > ${sampleName}.host_removed.sorted.bam
-    fi
-
     # Versions #
     cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -144,7 +136,28 @@ process removeHumanReads {
     END_VERSIONS
     """
 }
+process samtoolsSort {
+    label 'process_low'
+    tag { sampleName }
 
+    input:
+    tuple val(sampleName), path(bam)
+
+    output:
+    tuple val(sampleName), path("${sampleName}.dehosted.sorted.bam"), emit: bam
+    path("versions.yml"), emit: versions
+
+    script:
+    """
+    samtools sort $bam > ${sampleName}.dehosted.sorted.bam
+
+    # Versions #
+    cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            samtools: \$(echo \$(samtools --version | head -n 1 | grep samtools | sed 's/samtools //'))
+    END_VERSIONS
+    """
+}
 process regenerateFastqFiles {
     // Output if we are not fastq downsampling
     if ( !params.downsample || params.downsample_amplicons ) {
@@ -176,7 +189,6 @@ process regenerateFastqFiles {
     END_VERSIONS
     """
 }
-
 process regenerateFast5s_MM2 {
     publishDir "${params.outdir}/${params.run_name}/run", pattern: "fast5_pass/${sampleName}", mode: "copy"
     label 'process_medium'

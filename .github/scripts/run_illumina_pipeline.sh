@@ -159,7 +159,7 @@ nextflow run ./main.nf \
 
 ### Check Pipeline Outputs ###
 # 1. Num Human Reads
-READS=`awk -F, '$1 == "illumina-18_S15" {print $2}' ./results/removal_summary.csv`
+READS=`awk -F, '$1 == "illumina-18_S15_dehosted" {print $2}' ./results/removal_summary.csv`
 if [[ "$READS" != "0" ]]; then 
     echo "Incorrect output: Number of Human Reads"
     echo "  Expected: 0, Got: $READS"
@@ -167,7 +167,7 @@ if [[ "$READS" != "0" ]]; then
 fi
 
 # 2. Total Reads Kept
-READS=`awk -F, '$1 == "illumina-4_S12" {print $4}' ./results/removal_summary.csv`
+READS=`awk -F, '$1 == "illumina-4_S12_dehosted" {print $4}' ./results/removal_summary.csv`
 if [[ "$READS" != "100" ]]; then 
     echo "Incorrect output: Number of Paired Reads Kept"
     echo "  Expected: 100, Got: $READS"
@@ -175,7 +175,7 @@ if [[ "$READS" != "100" ]]; then
 fi
 
 # Reset and Track
-mv .nextflow.log artifacts/illumina_downsampled.nextflow.log
+mv .nextflow.log artifacts/illumina_downsampled_reran.nextflow.log
 rm -rf results work/ .nextflow*
 
 echo "Done"
