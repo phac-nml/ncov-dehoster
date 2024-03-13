@@ -194,8 +194,6 @@ done < regions.txt
 
 # Merge
 samtools merge ${SAMPLE_NAME}_downsampled.bam *_downsampled.tmp.bam
-samtools sort ${SAMPLE_NAME}_downsampled.bam > ${SAMPLE_NAME}_downsampled.sorted.bam
-samtools index ${SAMPLE_NAME}_downsampled.sorted.bam
 
 # Remove unneeded files
 rm *.tmp.sam

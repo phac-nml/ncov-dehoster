@@ -67,10 +67,13 @@ process samtoolsAmpliconDownsample {
     # Get approximate per amplicon read count
     perAmpliconReadCount=\$((${sample_size}/\$(wc -l ${amplicons} | cut -f1 -d' ')))
 
-    # Run
-    samtools index ${bam}
+    # Files must be sorted to work with downsampling
+    samtools sort ${bam} > ${sampleName}.sorted.bam
+    samtools index ${sampleName}.sorted.bam
+
+    # Downsample with samtools view and awk
     bash downsample_bam.sh \\
-        --bam ${bam} \\
+        --bam ${sampleName}.sorted.bam \\
         -a ${amplicons} \\
         -p ${platform} \\
         --read-count \$perAmpliconReadCount \\
